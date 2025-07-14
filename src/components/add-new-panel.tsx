@@ -19,6 +19,7 @@ import {
 
 interface AddNewPanelProps {
   onImageUpdate: (newImageUrl: string) => void;
+  onNavigate: (view: 'add-text') => void;
 }
 
 interface AddItemButtonProps {
@@ -48,7 +49,7 @@ function AddItemButton({ icon, title, description, onClick, disabled }: AddItemB
   );
 }
 
-export function AddNewPanel({ onImageUpdate }: AddNewPanelProps) {
+export function AddNewPanel({ onImageUpdate, onNavigate }: AddNewPanelProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
@@ -105,7 +106,7 @@ export function AddNewPanel({ onImageUpdate }: AddNewPanelProps) {
           icon={<Type size={24} />}
           title="Add Text"
           description="Personalize text with fonts & colors"
-          disabled
+          onClick={() => onNavigate('add-text')}
         />
         <AddItemButton
           icon={<Smile size={24} />}

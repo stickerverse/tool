@@ -6,6 +6,7 @@ import { DesignCanvas } from './design-canvas';
 import { PropertiesPanel } from './properties-panel';
 import { Separator } from './ui/separator';
 import { AddNewPanel } from './add-new-panel';
+import { AddTextPanel } from './add-text-panel';
 
 export type StickerState = {
   key: number;
@@ -31,7 +32,7 @@ const INITIAL_STATE: StickerState = {
   borderColor: '#FFFFFF',
 };
 
-type EditorView = 'add' | 'edit';
+type EditorView = 'add' | 'edit' | 'add-text';
 
 export default function StickerStudio() {
   const [sticker, setSticker] = useState<StickerState>(INITIAL_STATE);
@@ -65,6 +66,38 @@ export default function StickerStudio() {
     setView('add');
   }
 
+  const navigateTo = (newView: EditorView) => {
+    setView(newView);
+  }
+
+  const renderPanel = () => {
+    switch (view) {
+        case 'edit':
+            return (
+                <PropertiesPanel 
+                    sticker={sticker} 
+                    setSticker={setSticker} 
+                    onImageUpdate={handleImageUpdate} 
+                    onReset={handleReset}
+                    onNavigateBack={() => navigateTo('add')}
+                />
+            );
+        case 'add':
+            return (
+                <AddNewPanel onImageUpdate={handleImageUpdate} onNavigate={navigateTo} />
+            );
+        case 'add-text':
+            return (
+                <AddTextPanel 
+                    onNavigateBack={() => navigateTo('add')}
+                    onTextAdd={handleImageUpdate}
+                />
+            )
+        default:
+            return null;
+    }
+  }
+
   const { key, ...designCanvasProps } = sticker;
 
   const gridStyle = {
@@ -81,17 +114,7 @@ export default function StickerStudio() {
       </div>
       <Separator orientation="vertical" className="hidden md:block bg-border/50" />
       <div className="w-full md:w-[360px] flex-shrink-0 bg-card border-l border-border/50">
-        {view === 'edit' ? (
-            <PropertiesPanel 
-                sticker={sticker} 
-                setSticker={setSticker} 
-                onImageUpdate={handleImageUpdate} 
-                onReset={handleReset}
-                onNavigateBack={() => setView('add')}
-            />
-        ) : (
-            <AddNewPanel onImageUpdate={handleImageUpdate} />
-        )}
+        {renderPanel()}
       </div>
     </div>
   );

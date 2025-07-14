@@ -3,6 +3,7 @@
 
 import { removeBackground, type RemoveBackgroundInput } from '@/ai/flows/remove-background';
 import { cropImage, type CropImageInput } from '@/ai/flows/crop-image';
+import { generateTextImage, type GenerateTextImageInput } from '@/ai/flows/generate-text-image';
 import { z } from 'zod';
 
 export async function removeImageBackground(
@@ -39,4 +40,22 @@ export async function cropImageToShape(
       const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
       return { error: `Failed to crop image: ${errorMessage}` };
     }
+}
+
+export async function addTextToImage(
+  input: GenerateTextImageInput
+): Promise<{ imageDataUri: string } | { error: string }> {
+  try {
+    const GenerateTextImageInputSchema = z.object({
+      text: z.string().min(1, 'Text cannot be empty.'),
+    });
+
+    const validatedInput = GenerateTextImageInputSchema.parse(input);
+    const result = await generateTextImage(validatedInput);
+    return result;
+  } catch (e) {
+    console.error(e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    return { error: `Failed to generate text image: ${errorMessage}` };
+  }
 }
