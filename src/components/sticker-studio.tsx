@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { DesignCanvas } from './design-canvas';
 import { PropertiesPanel } from './properties-panel';
 import { Separator } from './ui/separator';
+import { AddNewPanel } from './add-new-panel';
 
 export type StickerState = {
   key: number;
@@ -30,8 +31,11 @@ const INITIAL_STATE: StickerState = {
   borderColor: '#FFFFFF',
 };
 
+type EditorView = 'add' | 'edit';
+
 export default function StickerStudio() {
   const [sticker, setSticker] = useState<StickerState>(INITIAL_STATE);
+  const [view, setView] = useState<EditorView>('edit');
 
   const handleImageUpdate = (newImageUrl: string) => {
     const img = new Image();
@@ -47,6 +51,7 @@ export default function StickerStudio() {
         height: newHeight,
         aspectRatio,
       }));
+      setView('edit');
     };
     img.src = newImageUrl;
   };
@@ -54,9 +59,10 @@ export default function StickerStudio() {
   const handleReset = () => {
     setSticker(s => ({
       ...INITIAL_STATE,
-      key: Date.now(), // Ensure a re-render
-      imageUrl: null, // Clear the image
+      key: Date.now(),
+      imageUrl: null, 
     }));
+    setView('add');
   }
 
   const { key, ...designCanvasProps } = sticker;
@@ -75,7 +81,17 @@ export default function StickerStudio() {
       </div>
       <Separator orientation="vertical" className="hidden md:block bg-border/50" />
       <div className="w-full md:w-[360px] flex-shrink-0 bg-card border-l border-border/50">
-        <PropertiesPanel sticker={sticker} setSticker={setSticker} onImageUpdate={handleImageUpdate} onReset={handleReset} />
+        {view === 'edit' ? (
+            <PropertiesPanel 
+                sticker={sticker} 
+                setSticker={setSticker} 
+                onImageUpdate={handleImageUpdate} 
+                onReset={handleReset}
+                onNavigateBack={() => setView('add')}
+            />
+        ) : (
+            <AddNewPanel onImageUpdate={handleImageUpdate} />
+        )}
       </div>
     </div>
   );

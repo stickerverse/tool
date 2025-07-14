@@ -8,6 +8,7 @@ import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { BackgroundRemover } from './background-remover';
 import { ScreenshotButton } from './screenshot-button';
+import { ImageUploader } from './image-uploader';
 import {
   FlipHorizontal,
   Lock,
@@ -27,12 +28,6 @@ import {
   StretchVertical,
   Layers2,
   Layers3,
-  Image,
-  Star,
-  Circle,
-  Heart,
-  Square,
-  RefreshCw,
 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 import { ImageCropper } from './image-cropper';
@@ -42,6 +37,7 @@ interface PropertiesPanelProps {
   setSticker: Dispatch<SetStateAction<StickerState>>;
   onImageUpdate: (newImageUrl: string) => void;
   onReset: () => void;
+  onNavigateBack: () => void;
 }
 
 function ControlSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -62,7 +58,7 @@ function ButtonGroupButton({ children, onClick, active, disabled }: { children: 
 }
 
 
-export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset }: PropertiesPanelProps) {
+export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, onNavigateBack }: PropertiesPanelProps) {
   const handleSizeChange = (amount: number) => {
     setSticker(s => {
       const newWidth = s.width + amount;
@@ -89,7 +85,7 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset }:
   return (
     <div className="h-full flex flex-col bg-card text-foreground">
       <header className="flex items-center justify-between p-4 border-b border-border/50">
-        <Button variant="ghost" size="icon">
+        <Button variant="ghost" size="icon" onClick={onNavigateBack}>
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <h1 className="text-lg font-semibold tracking-wide">EDIT FILE</h1>
@@ -101,6 +97,13 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset }:
       <ScrollArea className="flex-1">
         <div className="p-4 space-y-6">
           
+          <div className="grid grid-cols-2 gap-4">
+            <ImageUploader onImageUpdate={onImageUpdate} />
+            <BackgroundRemover onImageUpdate={onImageUpdate} stickerImage={sticker.imageUrl} />
+          </div>
+
+          <Separator className="bg-border/50" />
+
           <div className="grid grid-cols-2 gap-4">
             <ControlSection title="Alignment">
                 <ButtonGroup>
@@ -116,7 +119,7 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset }:
             </ControlSection>
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-2 gap-4">
             <ControlSection title="Size">
               <ButtonGroup>
                 <ButtonGroupButton onClick={() => handleSizeChange(-10)}><Minus /></ButtonGroupButton>
@@ -133,24 +136,8 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset }:
                 </ButtonGroupButton>
               </ButtonGroup>
             </ControlSection>
-             <ControlSection title="Fit">
-                <ButtonGroup>
-                    <ButtonGroupButton><StretchVertical /></ButtonGroupButton>
-                    <ButtonGroupButton><StretchHorizontal /></ButtonGroupButton>
-                </ButtonGroup>
-            </ControlSection>
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <ControlSection title="Invert">
-                <Button variant="outline" className="w-full justify-center h-10 bg-zinc-800 border-zinc-700 hover:bg-zinc-700" onClick={() => setSticker(s => ({ ...s, isFlipped: !s.isFlipped }))}>
-                  <FlipHorizontal className="mr-2 h-4 w-4" />
-                  Flip Image
-                </Button>
-            </ControlSection>
-            <BackgroundRemover onImageUpdate={onImageUpdate} stickerImage={sticker.imageUrl} />
-          </div>
-
           <Separator className="bg-border/50" />
           
           <ImageCropper onImageUpdate={onImageUpdate} stickerImage={sticker.imageUrl}/>
@@ -158,7 +145,7 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset }:
           <Separator className="bg-border/50" />
           
           <ControlSection title="Border">
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-3">
                     <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Color</h3>
                     <Input
@@ -176,26 +163,32 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset }:
                     <ButtonGroupButton onClick={() => handleBorderWidthChange(1)}><Plus /></ButtonGroupButton>
                   </ButtonGroup>
                 </div>
-                <div className="space-y-3">
-                    <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Show/Hide</h3>
-                   <ButtonGroup>
-                    <ButtonGroupButton onClick={toggleBorder} active={sticker.borderWidth > 0}>
-                        <Eye />
-                    </ButtonGroupButton>
-                    <ButtonGroupButton onClick={() => setSticker(s => ({...s, borderColor: 'transparent'}))} active={sticker.borderColor === 'transparent'}>
-                        <EyeOff />
-                    </ButtonGroupButton>
-                  </ButtonGroup>
-                </div>
+            </div>
+             <div className="space-y-3 mt-4">
+                <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Show/Hide</h3>
+               <ButtonGroup>
+                <ButtonGroupButton onClick={toggleBorder} active={sticker.borderWidth > 0}>
+                    <Eye />
+                </ButtonGroupButton>
+                <ButtonGroupButton onClick={() => setSticker(s => ({...s, borderWidth: 0}))} active={sticker.borderWidth === 0}>
+                    <EyeOff />
+                </ButtonGroupButton>
+              </ButtonGroup>
             </div>
           </ControlSection>
 
           <Separator className="bg-border/50" />
           
           <ControlSection title="Layer Actions">
-            <Button variant="outline" className="w-full justify-center h-10 bg-zinc-800 border-zinc-700 hover:bg-zinc-700">
-                <Copy className="mr-2"/> Duplicate
-            </Button>
+            <div className="grid grid-cols-2 gap-4">
+                <Button variant="outline" className="w-full justify-center h-10 bg-zinc-800 border-zinc-700 hover:bg-zinc-700">
+                    <Copy className="mr-2"/> Duplicate
+                </Button>
+                <Button variant="outline" className="w-full justify-center h-10 bg-zinc-800 border-zinc-700 hover:bg-zinc-700" onClick={() => setSticker(s => ({ ...s, isFlipped: !s.isFlipped }))}>
+                    <FlipHorizontal className="mr-2 h-4 w-4" />
+                    Flip Image
+                </Button>
+            </div>
           </ControlSection>
 
         </div>
