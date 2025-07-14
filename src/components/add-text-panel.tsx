@@ -6,25 +6,22 @@ import { Button } from './ui/button';
 import { Textarea } from './ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { addTextToImage } from '@/app/actions';
 import {
   ChevronLeft,
   Plus,
   Layers,
   Save,
   CheckCircle2,
-  Loader2,
 } from 'lucide-react';
 import type { EditorView } from './sticker-studio';
 
 interface AddTextPanelProps {
     onNavigateBack: () => void;
-    onTextAdd: (imageUrl: string) => void;
+    onTextAdd: (text: string) => void;
 }
 
 export function AddTextPanel({ onNavigateBack, onTextAdd }: AddTextPanelProps) {
   const [text, setText] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const { toast } = useToast();
 
   const handleAddText = async () => {
@@ -37,34 +34,11 @@ export function AddTextPanel({ onNavigateBack, onTextAdd }: AddTextPanelProps) {
         return;
     }
     
-    setIsProcessing(true);
-    toast({ title: "AI is at work...", description: "Generating your text image." });
-
-    const result = await addTextToImage({ text });
-    setIsProcessing(false);
-
-    if ('error' in result) {
-        toast({
-            variant: "destructive",
-            title: "Failed to add text",
-            description: result.error,
-        });
-    } else {
-        toast({
-            title: "Success!",
-            description: "Text added to the canvas.",
-        });
-        onTextAdd(result.imageDataUri);
-    }
-  };
-
-  const navigateToHistory = () => {
-    // A bit of a hack to navigate to the history panel from here.
-    // In a larger app, a global navigation context would be better.
-    const backButton = document.querySelector('button[aria-label="History"]') as HTMLButtonElement | null;
-    if (backButton) {
-      backButton.click();
-    }
+    onTextAdd(text);
+    toast({
+        title: "Success!",
+        description: "Text added to the canvas.",
+    });
   };
 
   return (
@@ -100,12 +74,9 @@ export function AddTextPanel({ onNavigateBack, onTextAdd }: AddTextPanelProps) {
 
         <Button 
             onClick={handleAddText} 
-            disabled={isProcessing} 
             className="w-full h-12 bg-accent hover:bg-accent/90 text-lg"
         >
-          {isProcessing ? (
-            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-          ) : 'Add Text'}
+          Add Text
         </Button>
       </div>
 

@@ -11,43 +11,55 @@ import { AddCodePanel } from './add-code-panel';
 import { AddClipartPanel } from './add-clipart-panel';
 import { HistoryPanel } from './history-panel';
 
-
-export type StickerState = {
-  imageUrl: string | null;
-  width: number;
-  height: number;
-  aspectRatio: number;
-  proportionsLocked: boolean;
-  isFlipped: boolean;
-  borderWidth: number;
-  borderColor: string;
-  scale: number;
+export type Layer = {
+  id: string;
+  type: 'image' | 'text';
+  // Common properties
   x: number;
   y: number;
+  scale: number;
+  rotation: number;
+  // Image specific
+  imageUrl?: string | null;
+  width: number;
+  height?: number;
+  aspectRatio?: number;
+  proportionsLocked?: boolean;
+  isFlipped?: boolean;
+  borderWidth?: number;
+  borderColor?: string;
+  // Text specific
+  text?: string;
+  font?: string;
+  fontSize?: number;
+  textColor?: string;
+};
+
+const INITIAL_LAYER: Layer = {
+    id: `layer-${Date.now()}`,
+    type: 'image',
+    imageUrl: `https://placehold.co/400x400.png`,
+    width: 400,
+    height: 400,
+    aspectRatio: 1,
+    proportionsLocked: true,
+    isFlipped: false,
+    borderWidth: 4,
+    borderColor: '#FFFFFF',
+    scale: 1,
+    x: 0,
+    y: 0,
+    rotation: 0,
 };
 
 export type HistoryEntry = {
-    state: StickerState;
+    layers: Layer[];
     description: string;
     timestamp: number;
 }
 
-const INITIAL_STATE: StickerState = {
-  imageUrl: `https://placehold.co/400x400.png`,
-  width: 400,
-  height: 400,
-  aspectRatio: 1,
-  proportionsLocked: true,
-  isFlipped: false,
-  borderWidth: 4,
-  borderColor: '#FFFFFF',
-  scale: 1,
-  x: 0,
-  y: 0,
-};
-
 const INITIAL_HISTORY_ENTRY: HistoryEntry = {
-    state: INITIAL_STATE,
+    layers: [INITIAL_LAYER],
     description: 'Initial State',
     timestamp: Date.now(),
 }
@@ -57,19 +69,18 @@ export type EditorView = 'add' | 'edit' | 'add-text' | 'add-code' | 'add-clipart
 export default function StickerStudio() {
   const [history, setHistory] = useState<HistoryEntry[]>([INITIAL_HISTORY_ENTRY]);
   const [historyIndex, setHistoryIndex] = useState(0);
-  const [sticker, setSticker] = useState<StickerState>(INITIAL_STATE);
+  const [layers, setLayers] = useState<Layer[]>(INITIAL_HISTORY_ENTRY.layers);
+  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(INITIAL_LAYER.id);
   const [view, setView] = useState<EditorView>('edit');
   
   useEffect(() => {
-    setSticker(history[historyIndex].state);
+    setLayers(history[historyIndex].layers);
   }, [history, historyIndex]);
 
-  const updateHistory = useCallback((newState: Partial<StickerState>, description: string) => {
+  const updateHistory = useCallback((newLayers: Layer[], description: string) => {
     setHistory(prevHistory => {
-        const currentEntry = prevHistory[historyIndex];
-        const updatedState = { ...currentEntry.state, ...newState };
         const newEntry: HistoryEntry = {
-            state: updatedState,
+            layers: newLayers,
             description,
             timestamp: Date.now()
         };
@@ -80,12 +91,27 @@ export default function StickerStudio() {
     setHistoryIndex(prevIndex => prevIndex + 1);
   }, [historyIndex]);
 
-  const commitToHistory = (description: string) => {
-    updateHistory(sticker, description);
+  const handleLiveUpdateLayer = (id: string, updates: Partial<Layer>) => {
+    setLayers(prevLayers =>
+        prevLayers.map(l => (l.id === id ? { ...l, ...updates } : l))
+    );
   }
 
-  const handleLiveUpdate = (updates: Partial<StickerState>) => {
-    setSticker(prev => ({...prev, ...updates}));
+  const handleCommitUpdate = (description: string) => {
+    updateHistory(layers, description);
+  }
+
+  const handleLayerChange = (id: string, updates: Partial<Layer>, description: string) => {
+    const newLayers = layers.map(l => (l.id === id ? { ...l, ...updates } : l));
+    updateHistory(newLayers, description);
+  }
+  
+  const addLayer = (newLayer: Omit<Layer, 'id'>, description: string) => {
+    const layerWithId: Layer = { ...newLayer, id: `layer-${Date.now()}` };
+    const newLayers = [...layers, layerWithId];
+    updateHistory(newLayers, description);
+    setSelectedLayerId(layerWithId.id);
+    setView('edit');
   }
 
   const handleImageUpdate = (newImageUrl: string, description: string) => {
@@ -95,26 +121,38 @@ export default function StickerStudio() {
       const newWidth = 400;
       const newHeight = newWidth / aspectRatio;
       
-      const currentState = history[historyIndex]?.state;
-
-      const nextState: Partial<StickerState> = {
-        ...sticker,
+      const newImageLayer: Omit<Layer, 'id'> = {
+        type: 'image',
         imageUrl: newImageUrl,
         width: newWidth,
         height: newHeight,
-        aspectRatio,
+        aspectRatio: aspectRatio,
+        x: 0, y: 0, scale: 1, rotation: 0,
         isFlipped: false,
+        proportionsLocked: true,
       };
-
-      updateHistory(nextState, description);
-      setView('edit');
+      addLayer(newImageLayer, description);
     };
     img.src = newImageUrl;
   };
+
+  const handleTextAdd = (text: string) => {
+    const newTextLayer: Omit<Layer, 'id'> = {
+        type: 'text',
+        text,
+        width: 300, // a default width
+        x: 20, y: 20, scale: 1, rotation: 0,
+        textColor: '#FFFFFF',
+        font: 'Inter',
+        fontSize: 48,
+    };
+    addLayer(newTextLayer, 'Add Text');
+  }
   
   const handleReset = () => {
-    updateHistory(INITIAL_STATE, 'Reset Canvas');
-    setView('add');
+    updateHistory([INITIAL_LAYER], 'Reset Canvas');
+    setSelectedLayerId(INITIAL_LAYER.id);
+    setView('edit');
   }
 
   const navigateTo = (newView: EditorView) => {
@@ -138,19 +176,19 @@ export default function StickerStudio() {
     }
   }
   
-  // A bit of a hack to pass a function to a child component that can navigate.
-  // In a real app, this would be a proper context or state manager.
   if (typeof window !== 'undefined') {
     (window as any).navigateToHistory = () => navigateTo('history');
   }
 
   const renderPanel = () => {
+    const selectedLayer = layers.find(l => l.id === selectedLayerId) ?? null;
+
     switch (view) {
         case 'edit':
             return (
                 <PropertiesPanel 
-                    sticker={sticker} 
-                    onStickerChange={updateHistory}
+                    layer={selectedLayer} 
+                    onLayerChange={handleLayerChange}
                     onReset={handleReset}
                     onNavigate={navigateTo}
                 />
@@ -166,7 +204,7 @@ export default function StickerStudio() {
             return (
                 <AddTextPanel 
                     onNavigateBack={() => navigateTo('add')}
-                    onTextAdd={(url) => handleImageUpdate(url, 'Add Text')}
+                    onTextAdd={handleTextAdd}
                 />
             );
         case 'add-code':
@@ -210,9 +248,9 @@ export default function StickerStudio() {
     <div className="flex flex-col md:flex-row h-screen bg-background text-foreground overflow-hidden">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative" style={gridStyle}>
         <DesignCanvas 
-            sticker={sticker}
-            onUpdate={handleLiveUpdate} 
-            onCommit={commitToHistory}
+            layers={layers}
+            onUpdateLayer={handleLiveUpdateLayer} 
+            onCommit={handleCommitUpdate}
         />
       </div>
       <Separator orientation="vertical" className="hidden md:block bg-border/50" />

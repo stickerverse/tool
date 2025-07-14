@@ -3,132 +3,161 @@
 
 import { useState, useRef, type MouseEvent, type WheelEvent } from 'react';
 import Image from 'next/image';
-import type { StickerState } from './sticker-studio';
+import type { Layer } from './sticker-studio';
 import { Skeleton } from './ui/skeleton';
 
 interface DesignCanvasProps {
-  sticker: StickerState;
-  onUpdate: (updates: Partial<StickerState>) => void;
+  layers: Layer[];
+  onUpdateLayer: (id: string, updates: Partial<Layer>) => void;
   onCommit: (description: string) => void;
 }
 
+const LayerComponent = ({
+    layer,
+    onUpdateLayer,
+    onCommit
+}: {
+    layer: Layer,
+    onUpdateLayer: (id: string, updates: Partial<Layer>) => void;
+    onCommit: (description: string) => void;
+}) => {
+    const [isPanning, setIsPanning] = useState(false);
+    const panStartRef = useRef({ x: 0, y: 0, layerX: 0, layerY: 0 });
+    const layerRef = useRef<HTMLDivElement>(null);
+
+    const onMouseDown = (e: MouseEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        setIsPanning(true);
+        panStartRef.current = {
+            x: e.clientX,
+            y: e.clientY,
+            layerX: layer.x,
+            layerY: layer.y,
+        };
+        if (layerRef.current) {
+            layerRef.current.style.cursor = 'grabbing';
+            layerRef.current.style.zIndex = '10';
+        }
+    };
+
+    const onMouseMove = (e: MouseEvent<HTMLDivElement>) => {
+        if (!isPanning) return;
+        const dx = e.clientX - panStartRef.current.x;
+        const dy = e.clientY - panStartRef.current.y;
+        onUpdateLayer(layer.id, {
+            x: panStartRef.current.layerX + dx,
+            y: panStartRef.current.layerY + dy,
+        });
+    };
+
+    const onMouseUpOrLeave = (e: MouseEvent<HTMLDivElement>) => {
+        if (isPanning) {
+            onCommit('Move Layer');
+        }
+        setIsPanning(false);
+        if (layerRef.current) {
+            layerRef.current.style.cursor = 'grab';
+            layerRef.current.style.zIndex = '1';
+        }
+    };
+    
+    const onWheel = (e: WheelEvent<HTMLDivElement>) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const zoomFactor = 1.1;
+        let newScale;
+        if (e.deltaY < 0) {
+            newScale = layer.scale * zoomFactor;
+        } else {
+            newScale = layer.scale / zoomFactor;
+        }
+        const finalScale = Math.max(0.1, Math.min(newScale, 10));
+        onUpdateLayer(layer.id, { scale: finalScale });
+        onCommit('Scale Layer');
+    };
+
+    const containerStyle: React.CSSProperties = {
+        position: 'absolute',
+        width: layer.width,
+        height: layer.type === 'text' ? 'auto' : layer.height,
+        cursor: 'grab',
+        transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale})`,
+        transition: isPanning ? 'none' : 'transform 0.1s ease-out',
+        border: layer.borderWidth ? `${layer.borderWidth}px solid ${layer.borderColor}` : 'none',
+        borderRadius: '8px',
+        boxShadow: `0 0 0 1px hsla(var(--foreground), 0.1)`,
+    };
+    
+    const imageStyle: React.CSSProperties = {
+        transform: `scaleX(${layer.isFlipped ? -1 : 1})`,
+        objectFit: 'contain',
+        width: '100%',
+        height: '100%',
+        borderRadius: '8px',
+        transition: 'transform 0.3s ease',
+    };
+
+    const textStyle: React.CSSProperties = {
+        fontSize: '48px', // Example size, should be part of layer state
+        fontWeight: 'bold',
+        color: '#FFFFFF', // Example color
+        padding: '10px',
+        fontFamily: 'Bebas Neue, sans-serif',
+        whiteSpace: 'nowrap',
+    }
+
+    return (
+        <div
+          ref={layerRef}
+          onMouseDown={onMouseDown}
+          onMouseMove={onMouseMove}
+          onMouseUp={onMouseUpOrLeave}
+          onMouseLeave={onMouseUpOrLeave}
+          onWheel={onWheel}
+          style={containerStyle}
+        >
+          {layer.type === 'image' && layer.imageUrl ? (
+            <Image
+              src={layer.imageUrl}
+              alt="Sticker design layer"
+              width={layer.width}
+              height={layer.height || 400}
+              style={imageStyle}
+              data-ai-hint="sticker design"
+              unoptimized
+              draggable={false}
+            />
+          ) : layer.type === 'text' ? (
+              <div style={textStyle}>
+                  {layer.text}
+              </div>
+          ) : (
+            <Skeleton className="w-full h-full rounded-lg" />
+          )}
+        </div>
+      );
+}
+
+
 export function DesignCanvas({
-  sticker,
-  onUpdate,
+  layers,
+  onUpdateLayer,
   onCommit,
 }: DesignCanvasProps) {
-  const [isPanning, setIsPanning] = useState(false);
-  const panStartRef = useRef({ x: 0, y: 0, imageX: 0, imageY: 0 });
-  const canvasRef = useRef<HTMLDivElement>(null);
-
-  const {
-    imageUrl,
-    width,
-    height,
-    isFlipped,
-    borderWidth,
-    borderColor,
-    scale,
-    x,
-    y,
-  } = sticker;
-
-  const onMouseDown = (e: MouseEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    setIsPanning(true);
-    panStartRef.current = {
-      x: e.clientX,
-      y: e.clientY,
-      imageX: x,
-      imageY: y,
-    };
-    if (canvasRef.current) {
-        canvasRef.current.style.cursor = 'grabbing';
-    }
-  };
-
-  const onMouseMove = (e: MouseEvent<HTMLDivElement>) => {
-    if (!isPanning) return;
-    const dx = e.clientX - panStartRef.current.x;
-    const dy = e.clientY - panStartRef.current.y;
-    onUpdate({
-      x: panStartRef.current.imageX + dx,
-      y: panStartRef.current.imageY + dy,
-    });
-  };
-
-  const onMouseUpOrLeave = () => {
-    if (isPanning) {
-      onCommit('Transform Layer');
-    }
-    setIsPanning(false);
-    if (canvasRef.current) {
-        canvasRef.current.style.cursor = 'grab';
-    }
-  };
-  
-  const onWheel = (e: WheelEvent<HTMLDivElement>) => {
-    e.preventDefault();
-    const zoomFactor = 1.1;
-    let newScale;
-    if (e.deltaY < 0) {
-      // Zoom in
-      newScale = scale * zoomFactor;
-    } else {
-      // Zoom out
-      newScale = scale / zoomFactor;
-    }
-    const finalScale = Math.max(0.1, Math.min(newScale, 10));
-    onUpdate({ scale: finalScale });
-    onCommit('Zoom Layer');
-  };
-
-
-  const containerStyle: React.CSSProperties = {
-    width: `${width}px`,
-    height: `${height}px`,
-    cursor: 'grab',
-    transform: `translate(${x}px, ${y}px) scale(${scale})`,
-    transition: isPanning ? 'none' : 'transform 0.1s ease-out',
-  };
-
-  const imageStyle: React.CSSProperties = {
-    transform: `scaleX(${isFlipped ? -1 : 1})`,
-    border: `${borderWidth}px solid ${borderColor}`,
-    borderRadius: '8px',
-    boxShadow: `0 0 0 1px hsla(var(--foreground), 0.1)`,
-    objectFit: 'contain',
-    width: '100%',
-    height: '100%',
-    transition: 'transform 0.3s ease',
-  };
-
-  return (
-    <div
-      id="design-canvas"
-      ref={canvasRef}
-      className="relative flex items-center justify-center"
-      style={containerStyle}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUpOrLeave}
-      onMouseLeave={onMouseUpOrLeave}
-      onWheel={onWheel}
-    >
-      {imageUrl ? (
-        <Image
-          src={imageUrl}
-          alt="Sticker design"
-          width={width}
-          height={height}
-          style={imageStyle}
-          data-ai-hint="sticker design"
-          unoptimized // Necessary for data URIs and to prevent Next.js image optimization issues
-          draggable={false} // Prevents native image dragging
-        />
-      ) : (
-        <Skeleton className="w-full h-full rounded-lg" />
-      )}
-    </div>
-  );
+    return (
+        <div
+            id="design-canvas"
+            className="relative w-[500px] h-[500px] flex items-center justify-center"
+        >
+            {layers.map(layer => (
+                <LayerComponent 
+                    key={layer.id}
+                    layer={layer}
+                    onUpdateLayer={onUpdateLayer}
+                    onCommit={onCommit}
+                />
+            ))}
+        </div>
+    );
 }
