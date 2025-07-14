@@ -24,8 +24,6 @@ import {
   Copy,
   AlignVerticalJustifyCenter,
   AlignHorizontalJustifyCenter,
-  StretchHorizontal,
-  StretchVertical,
   Layers2,
   Layers3,
 } from 'lucide-react';
@@ -195,7 +193,7 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, o
       </ScrollArea>
       
       <footer className="grid grid-cols-4 gap-2 p-4 border-t border-border/50">
-        <Button variant="ghost" className="flex-col h-auto"><Plus className="w-5 h-5 mb-1"/>Add Item</Button>
+        <Button variant="ghost" className="flex-col h-auto" onClick={() => onNavigateBack()}><Plus className="w-5 h-5 mb-1"/>Add Item</Button>
         <Button variant="ghost" className="flex-col h-auto"><Layers className="w-5 h-5 mb-1"/>Layers</Button>
         <ScreenshotButton />
         <Button variant="ghost" className="flex-col h-auto text-green-400 hover:text-green-400"><CheckCircle2 className="w-5 h-5 mb-1"/>Finalize</Button>

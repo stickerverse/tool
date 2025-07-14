@@ -21,6 +21,9 @@ export type StickerState = {
   isFlipped: boolean;
   borderWidth: number;
   borderColor: string;
+  scale: number;
+  x: number;
+  y: number;
 };
 
 const INITIAL_STATE: StickerState = {
@@ -33,6 +36,9 @@ const INITIAL_STATE: StickerState = {
   isFlipped: false,
   borderWidth: 4,
   borderColor: '#FFFFFF',
+  scale: 1,
+  x: 0,
+  y: 0,
 };
 
 export type EditorView = 'add' | 'edit' | 'add-text' | 'add-code' | 'add-clipart';
@@ -48,7 +54,7 @@ export default function StickerStudio() {
       const newWidth = 400;
       const newHeight = newWidth / aspectRatio;
       setSticker(s => ({
-        ...s,
+        ...INITIAL_STATE, // Reset most properties
         key: Date.now(),
         imageUrl: newImageUrl,
         width: newWidth,
@@ -58,6 +64,10 @@ export default function StickerStudio() {
       setView('edit');
     };
     img.src = newImageUrl;
+  };
+  
+  const handleStickerUpdate = (updates: Partial<StickerState>) => {
+    setSticker(s => ({ ...s, ...updates }));
   };
 
   const handleReset = () => {
@@ -127,7 +137,7 @@ export default function StickerStudio() {
   return (
     <div className="flex flex-col md:flex-row h-screen bg-background text-foreground overflow-hidden">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative" style={gridStyle}>
-        <DesignCanvas key={key} {...designCanvasProps} />
+        <DesignCanvas key={key} {...designCanvasProps} onUpdate={handleStickerUpdate} />
       </div>
       <Separator orientation="vertical" className="hidden md:block bg-border/50" />
       <div className="w-full md:w-[360px] flex-shrink-0 bg-card border-l border-border/50">
