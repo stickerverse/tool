@@ -82,21 +82,15 @@ export default function StickerStudio() {
       const newWidth = 400;
       const newHeight = newWidth / aspectRatio;
       
-      const nextState: StickerState = {
-        ...INITIAL_STATE,
+      const nextState: Partial<StickerState> = {
         imageUrl: newImageUrl,
         width: newWidth,
         height: newHeight,
         aspectRatio,
+        isFlipped: false, // Reset flip state for new image
       };
 
-      setHistory(prevHistory => {
-        const newEntry: HistoryEntry = { state: nextState, description, timestamp: Date.now() };
-        const newHistory = prevHistory.slice(0, historyIndex + 1);
-        newHistory.push(newEntry);
-        return newHistory;
-      });
-      setHistoryIndex(prevIndex => prevIndex + 1);
+      updateHistory(nextState, description);
       setView('edit');
     };
     img.src = newImageUrl;
@@ -130,6 +124,12 @@ export default function StickerStudio() {
     if (historyIndex < history.length - 1) {
         setHistoryIndex(historyIndex + 1);
     }
+  }
+  
+  // A bit of a hack to pass a function to a child component that can navigate.
+  // In a real app, this would be a proper context or state manager.
+  if (typeof window !== 'undefined') {
+    (window as any).navigateToHistory = () => navigateTo('history');
   }
 
   const renderPanel = () => {
