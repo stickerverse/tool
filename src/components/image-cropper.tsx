@@ -9,7 +9,7 @@ import { Loader2, Star, Circle, Heart, Square } from 'lucide-react';
 import type { CropImageInput } from '@/ai/flows/crop-image';
 
 interface ImageCropperProps {
-  onImageUpdate: (newImageUrl: string) => void;
+  onImageUpdate: (newImageUrl: string, shape: Shape) => void;
   stickerImage: string | null;
 }
 
@@ -54,7 +54,7 @@ export function ImageCropper({ onImageUpdate, stickerImage }: ImageCropperProps)
         description: result.error,
       });
     } else {
-      onImageUpdate(result.croppedImageDataUri);
+      onImageUpdate(result.croppedImageDataUri, shape);
       toast({
         title: "Success!",
         description: "Image has been cropped.",

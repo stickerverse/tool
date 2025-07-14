@@ -1,14 +1,14 @@
 
 'use client';
 
-import type { Dispatch, SetStateAction } from 'react';
-import type { StickerState } from './sticker-studio';
+import type { StickerState, EditorView } from './sticker-studio';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { BackgroundRemover } from './background-remover';
 import { ScreenshotButton } from './screenshot-button';
 import { ImageUploader } from './image-uploader';
+import { ImageCropper } from './image-cropper';
 import {
   FlipHorizontal,
   Lock,
@@ -28,14 +28,13 @@ import {
   Layers3,
 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
-import { ImageCropper } from './image-cropper';
+
 
 interface PropertiesPanelProps {
   sticker: StickerState;
-  setSticker: Dispatch<SetStateAction<StickerState>>;
-  onImageUpdate: (newImageUrl: string) => void;
+  onStickerChange: (updates: Partial<StickerState>, description: string) => void;
   onReset: () => void;
-  onNavigateBack: () => void;
+  onNavigate: (view: EditorView) => void;
 }
 
 function ControlSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -56,34 +55,39 @@ function ButtonGroupButton({ children, onClick, active, disabled }: { children: 
 }
 
 
-export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, onNavigateBack }: PropertiesPanelProps) {
+export function PropertiesPanel({ sticker, onStickerChange, onReset, onNavigate }: PropertiesPanelProps) {
   const handleSizeChange = (amount: number) => {
-    setSticker(s => {
-      const newWidth = s.width + amount;
-      const newHeight = s.proportionsLocked ? newWidth / s.aspectRatio : s.height + amount;
-      return {
-        ...s,
-        width: Math.max(10, newWidth),
-        height: Math.max(10, newHeight),
-      };
-    });
+    const { width, height, proportionsLocked, aspectRatio } = sticker;
+    const newWidth = width + amount;
+    const newHeight = proportionsLocked ? newWidth / aspectRatio : height + amount;
+    onStickerChange({
+      width: Math.max(10, newWidth),
+      height: Math.max(10, newHeight),
+    }, `Resize to ${Math.round(newWidth)}x${Math.round(newHeight)}`);
   };
 
   const handleBorderWidthChange = (amount: number) => {
-    setSticker(s => ({
-      ...s,
-      borderWidth: Math.max(0, s.borderWidth + amount),
-    }));
+    const newBorderWidth = Math.max(0, sticker.borderWidth + amount);
+    onStickerChange({ borderWidth: newBorderWidth }, `Set border to ${newBorderWidth}px`);
   }
 
   const toggleBorder = () => {
-    setSticker(s => ({...s, borderWidth: s.borderWidth > 0 ? 0 : 4}))
+    const newBorderWidth = sticker.borderWidth > 0 ? 0 : 4;
+    onStickerChange({ borderWidth: newBorderWidth }, newBorderWidth > 0 ? 'Show Border' : 'Hide Border');
+  }
+
+  const handleImageUpdate = (newImageUrl: string) => {
+    onStickerChange({ imageUrl: newImageUrl }, 'Update Image');
+  };
+
+  const onImageCrop = (newImageUrl: string, shape: string) => {
+    onStickerChange({ imageUrl: newImageUrl }, `Crop to ${shape}`);
   }
 
   return (
     <div className="h-full flex flex-col bg-card text-foreground">
       <header className="flex items-center justify-between p-4 border-b border-border/50">
-        <Button variant="ghost" size="icon" onClick={onNavigateBack}>
+        <Button variant="ghost" size="icon" onClick={() => onNavigate('add')}>
           <ChevronLeft className="w-5 h-5" />
         </Button>
         <h1 className="text-lg font-semibold tracking-wide">EDIT FILE</h1>
@@ -96,8 +100,8 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, o
         <div className="p-4 space-y-6">
           
           <div className="grid grid-cols-2 gap-4">
-            <ImageUploader onImageUpdate={onImageUpdate} />
-            <BackgroundRemover onImageUpdate={onImageUpdate} stickerImage={sticker.imageUrl} />
+            <ImageUploader onImageUpdate={handleImageUpdate} />
+            <BackgroundRemover onImageUpdate={handleImageUpdate} stickerImage={sticker.imageUrl} />
           </div>
 
           <Separator className="bg-border/50" />
@@ -126,10 +130,10 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, o
             </ControlSection>
             <ControlSection title="Proportions">
               <ButtonGroup>
-                <ButtonGroupButton onClick={() => setSticker(s => ({ ...s, proportionsLocked: true }))} active={sticker.proportionsLocked}>
+                <ButtonGroupButton onClick={() => onStickerChange({ proportionsLocked: true }, 'Lock Proportions')} active={sticker.proportionsLocked}>
                   <Lock />
                 </ButtonGroupButton>
-                <ButtonGroupButton onClick={() => setSticker(s => ({ ...s, proportionsLocked: false }))} active={!sticker.proportionsLocked}>
+                <ButtonGroupButton onClick={() => onStickerChange({ proportionsLocked: false }, 'Unlock Proportions')} active={!sticker.proportionsLocked}>
                   <Unlock />
                 </ButtonGroupButton>
               </ButtonGroup>
@@ -138,7 +142,7 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, o
           
           <Separator className="bg-border/50" />
           
-          <ImageCropper onImageUpdate={onImageUpdate} stickerImage={sticker.imageUrl}/>
+          <ImageCropper onImageUpdate={onImageCrop} stickerImage={sticker.imageUrl}/>
           
           <Separator className="bg-border/50" />
           
@@ -150,7 +154,7 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, o
                       id="border-color"
                       type="color"
                       value={sticker.borderColor}
-                      onChange={(e) => setSticker(s => ({ ...s, borderColor: e.target.value }))}
+                      onChange={(e) => onStickerChange({ borderColor: e.target.value }, `Set border color to ${e.target.value}`)}
                       className="p-1 h-10 w-full bg-zinc-800 border-zinc-700"
                     />
                 </div>
@@ -168,7 +172,7 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, o
                 <ButtonGroupButton onClick={toggleBorder} active={sticker.borderWidth > 0}>
                     <Eye />
                 </ButtonGroupButton>
-                <ButtonGroupButton onClick={() => setSticker(s => ({...s, borderWidth: 0}))} active={sticker.borderWidth === 0}>
+                <ButtonGroupButton onClick={() => onStickerChange({borderWidth: 0}, 'Hide Border')} active={sticker.borderWidth === 0}>
                     <EyeOff />
                 </ButtonGroupButton>
               </ButtonGroup>
@@ -182,7 +186,7 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, o
                 <Button variant="outline" className="w-full justify-center h-10 bg-zinc-800 border-zinc-700 hover:bg-zinc-700">
                     <Copy className="mr-2"/> Duplicate
                 </Button>
-                <Button variant="outline" className="w-full justify-center h-10 bg-zinc-800 border-zinc-700 hover:bg-zinc-700" onClick={() => setSticker(s => ({ ...s, isFlipped: !s.isFlipped }))}>
+                <Button variant="outline" className="w-full justify-center h-10 bg-zinc-800 border-zinc-700 hover:bg-zinc-700" onClick={() => onStickerChange({ isFlipped: !sticker.isFlipped }, 'Flip Layer')}>
                     <FlipHorizontal className="mr-2 h-4 w-4" />
                     Flip Image
                 </Button>
@@ -193,8 +197,8 @@ export function PropertiesPanel({ sticker, setSticker, onImageUpdate, onReset, o
       </ScrollArea>
       
       <footer className="grid grid-cols-4 gap-2 p-4 border-t border-border/50">
-        <Button variant="ghost" className="flex-col h-auto" onClick={() => onNavigateBack()}><Plus className="w-5 h-5 mb-1"/>Add Item</Button>
-        <Button variant="ghost" className="flex-col h-auto"><Layers className="w-5 h-5 mb-1"/>Layers</Button>
+        <Button variant="ghost" className="flex-col h-auto" onClick={() => onNavigate('add')}><Plus className="w-5 h-5 mb-1"/>Add Item</Button>
+        <Button variant="ghost" className="flex-col h-auto" onClick={() => onNavigate('history')}><Layers className="w-5 h-5 mb-1"/>History</Button>
         <ScreenshotButton />
         <Button variant="ghost" className="flex-col h-auto text-green-400 hover:text-green-400"><CheckCircle2 className="w-5 h-5 mb-1"/>Finalize</Button>
       </footer>

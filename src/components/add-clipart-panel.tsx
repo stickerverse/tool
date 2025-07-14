@@ -15,6 +15,7 @@ import {
   Loader2,
   Paintbrush,
 } from 'lucide-react';
+import type { EditorView } from './sticker-studio';
 
 interface AddClipartPanelProps {
     onNavigateBack: () => void;
@@ -97,9 +98,9 @@ export function AddClipartPanel({ onNavigateBack, onClipartAdd }: AddClipartPane
           <Plus className="w-5 h-5 mb-1" />
           Add Item
         </Button>
-        <Button variant="ghost" className="flex-col h-auto">
+        <Button variant="ghost" className="flex-col h-auto" onClick={() => (window as any).navigateToHistory?.()}>
           <Layers className="w-5 h-5 mb-1" />
-          Layers
+          History
         </Button>
         <Button variant="ghost" className="flex-col h-auto">
           <Save className="w-5 h-5 mb-1" />

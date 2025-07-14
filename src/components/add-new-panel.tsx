@@ -129,9 +129,9 @@ export function AddNewPanel({ onImageUpdate, onNavigate }: AddNewPanelProps) {
           <Plus className="w-5 h-5 mb-1" />
           Add Item
         </Button>
-        <Button variant="ghost" className="flex-col h-auto">
+        <Button variant="ghost" className="flex-col h-auto" onClick={() => onNavigate('history')}>
           <Layers className="w-5 h-5 mb-1" />
-          Layers
+          History
         </Button>
         <Button variant="ghost" className="flex-col h-auto">
           <Save className="w-5 h-5 mb-1" />

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { DesignCanvas } from './design-canvas';
 import { PropertiesPanel } from './properties-panel';
 import { Separator } from './ui/separator';
@@ -9,10 +9,10 @@ import { AddNewPanel } from './add-new-panel';
 import { AddTextPanel } from './add-text-panel';
 import { AddCodePanel } from './add-code-panel';
 import { AddClipartPanel } from './add-clipart-panel';
+import { HistoryPanel } from './history-panel';
 
 
 export type StickerState = {
-  key: number;
   imageUrl: string | null;
   width: number;
   height: number;
@@ -26,8 +26,13 @@ export type StickerState = {
   y: number;
 };
 
+export type HistoryEntry = {
+    state: StickerState;
+    description: string;
+    timestamp: number;
+}
+
 const INITIAL_STATE: StickerState = {
-  key: Date.now(),
   imageUrl: `https://placehold.co/400x400.png`,
   width: 400,
   height: 400,
@@ -41,41 +46,68 @@ const INITIAL_STATE: StickerState = {
   y: 0,
 };
 
-export type EditorView = 'add' | 'edit' | 'add-text' | 'add-code' | 'add-clipart';
+const INITIAL_HISTORY_ENTRY: HistoryEntry = {
+    state: INITIAL_STATE,
+    description: 'Initial State',
+    timestamp: Date.now(),
+}
+
+export type EditorView = 'add' | 'edit' | 'add-text' | 'add-code' | 'add-clipart' | 'history';
 
 export default function StickerStudio() {
-  const [sticker, setSticker] = useState<StickerState>(INITIAL_STATE);
+  const [history, setHistory] = useState<HistoryEntry[]>([INITIAL_HISTORY_ENTRY]);
+  const [historyIndex, setHistoryIndex] = useState(0);
   const [view, setView] = useState<EditorView>('edit');
+  
+  const currentStickerState = history[historyIndex].state;
 
-  const handleImageUpdate = (newImageUrl: string) => {
+  const updateHistory = useCallback((newState: Partial<StickerState>, description: string) => {
+    setHistory(prevHistory => {
+        const newEntry: HistoryEntry = {
+            state: { ...prevHistory[historyIndex].state, ...newState },
+            description,
+            timestamp: Date.now()
+        };
+        const newHistory = prevHistory.slice(0, historyIndex + 1);
+        newHistory.push(newEntry);
+        return newHistory;
+    });
+    setHistoryIndex(prevIndex => prevIndex + 1);
+  }, [historyIndex]);
+
+  const handleImageUpdate = (newImageUrl: string, description: string) => {
     const img = new Image();
     img.onload = () => {
       const aspectRatio = img.naturalWidth / img.naturalHeight;
       const newWidth = 400;
       const newHeight = newWidth / aspectRatio;
-      setSticker(s => ({
-        ...INITIAL_STATE, // Reset most properties
-        key: Date.now(),
+      
+      const nextState: StickerState = {
+        ...INITIAL_STATE,
         imageUrl: newImageUrl,
         width: newWidth,
         height: newHeight,
         aspectRatio,
-      }));
+      };
+
+      setHistory(prevHistory => {
+        const newEntry: HistoryEntry = { state: nextState, description, timestamp: Date.now() };
+        const newHistory = prevHistory.slice(0, historyIndex + 1);
+        newHistory.push(newEntry);
+        return newHistory;
+      });
+      setHistoryIndex(prevIndex => prevIndex + 1);
       setView('edit');
     };
     img.src = newImageUrl;
   };
   
-  const handleStickerUpdate = (updates: Partial<StickerState>) => {
-    setSticker(s => ({ ...s, ...updates }));
-  };
-
   const handleReset = () => {
-    setSticker(s => ({
+    const nextState = {
       ...INITIAL_STATE,
-      key: Date.now(),
       imageUrl: null, 
-    }));
+    };
+    updateHistory(nextState, 'Reset Canvas');
     setView('add');
   }
 
@@ -83,49 +115,77 @@ export default function StickerStudio() {
     setView(newView);
   }
 
+  const jumpToHistory = (index: number) => {
+    setHistoryIndex(index);
+    setView('edit');
+  }
+
+  const undo = () => {
+    if (historyIndex > 0) {
+        setHistoryIndex(historyIndex - 1);
+    }
+  }
+
+  const redo = () => {
+    if (historyIndex < history.length - 1) {
+        setHistoryIndex(historyIndex + 1);
+    }
+  }
+
   const renderPanel = () => {
     switch (view) {
         case 'edit':
             return (
                 <PropertiesPanel 
-                    sticker={sticker} 
-                    setSticker={setSticker} 
-                    onImageUpdate={handleImageUpdate} 
+                    sticker={currentStickerState} 
+                    onStickerChange={updateHistory}
                     onReset={handleReset}
-                    onNavigateBack={() => navigateTo('add')}
+                    onNavigate={navigateTo}
                 />
             );
         case 'add':
             return (
-                <AddNewPanel onImageUpdate={handleImageUpdate} onNavigate={navigateTo} />
+                <AddNewPanel 
+                    onImageUpdate={(url) => handleImageUpdate(url, 'Upload Image')} 
+                    onNavigate={navigateTo} 
+                />
             );
         case 'add-text':
             return (
                 <AddTextPanel 
                     onNavigateBack={() => navigateTo('add')}
-                    onTextAdd={handleImageUpdate}
+                    onTextAdd={(url) => handleImageUpdate(url, 'Add Text')}
                 />
             );
         case 'add-code':
             return (
                 <AddCodePanel
                     onNavigateBack={() => navigateTo('add')}
-                    onCodeAdd={handleImageUpdate}
+                    onCodeAdd={(url) => handleImageUpdate(url, 'Add QR Code')}
                 />
             );
         case 'add-clipart':
             return (
                 <AddClipartPanel
                     onNavigateBack={() => navigateTo('add')}
-                    onClipartAdd={handleImageUpdate}
+                    onClipartAdd={(url) => handleImageUpdate(url, 'Add Clipart')}
+                />
+            );
+        case 'history':
+            return (
+                <HistoryPanel
+                    history={history}
+                    currentIndex={historyIndex}
+                    onNavigateBack={() => navigateTo('edit')}
+                    onJump={jumpToHistory}
+                    onUndo={undo}
+                    onRedo={redo}
                 />
             );
         default:
             return null;
     }
   }
-
-  const { key, ...designCanvasProps } = sticker;
 
   const gridStyle = {
     backgroundSize: '40px 40px',
@@ -137,7 +197,11 @@ export default function StickerStudio() {
   return (
     <div className="flex flex-col md:flex-row h-screen bg-background text-foreground overflow-hidden">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative" style={gridStyle}>
-        <DesignCanvas key={key} {...designCanvasProps} onUpdate={handleStickerUpdate} />
+        <DesignCanvas 
+            key={history[historyIndex].timestamp} 
+            {...currentStickerState} 
+            onUpdate={(updates) => updateHistory(updates, 'Transform Layer')} 
+        />
       </div>
       <Separator orientation="vertical" className="hidden md:block bg-border/50" />
       <div className="w-full md:w-[360px] flex-shrink-0 bg-card border-l border-border/50">

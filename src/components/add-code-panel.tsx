@@ -20,6 +20,7 @@ import {
   MessageSquareText,
   Scan,
 } from 'lucide-react';
+import type { EditorView } from './sticker-studio';
 
 interface AddCodePanelProps {
   onNavigateBack: () => void;
@@ -139,9 +140,9 @@ export function AddCodePanel({ onNavigateBack, onCodeAdd }: AddCodePanelProps) {
           <Plus className="w-5 h-5 mb-1" />
           Add Item
         </Button>
-        <Button variant="ghost" className="flex-col h-auto">
+        <Button variant="ghost" className="flex-col h-auto" onClick={() => (window as any).navigateToHistory?.()}>
           <Layers className="w-5 h-5 mb-1" />
-          Layers
+          History
         </Button>
         <Button variant="ghost" className="flex-col h-auto">
           <Save className="w-5 h-5 mb-1" />

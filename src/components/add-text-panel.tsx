@@ -15,6 +15,7 @@ import {
   CheckCircle2,
   Loader2,
 } from 'lucide-react';
+import type { EditorView } from './sticker-studio';
 
 interface AddTextPanelProps {
     onNavigateBack: () => void;
@@ -54,6 +55,15 @@ export function AddTextPanel({ onNavigateBack, onTextAdd }: AddTextPanelProps) {
             description: "Text added to the canvas.",
         });
         onTextAdd(result.imageDataUri);
+    }
+  };
+
+  const navigateToHistory = () => {
+    // A bit of a hack to navigate to the history panel from here.
+    // In a larger app, a global navigation context would be better.
+    const backButton = document.querySelector('button[aria-label="History"]') as HTMLButtonElement | null;
+    if (backButton) {
+      backButton.click();
     }
   };
 
@@ -104,9 +114,9 @@ export function AddTextPanel({ onNavigateBack, onTextAdd }: AddTextPanelProps) {
           <Plus className="w-5 h-5 mb-1" />
           Add Item
         </Button>
-        <Button variant="ghost" className="flex-col h-auto">
+        <Button variant="ghost" aria-label="History" className="flex-col h-auto" onClick={() => (window as any).navigateToHistory?.()}>
           <Layers className="w-5 h-5 mb-1" />
-          Layers
+          History
         </Button>
         <Button variant="ghost" className="flex-col h-auto">
           <Save className="w-5 h-5 mb-1" />
