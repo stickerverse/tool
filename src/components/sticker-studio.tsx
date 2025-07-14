@@ -63,8 +63,14 @@ export default function StickerStudio() {
 
   const updateHistory = useCallback((newState: Partial<StickerState>, description: string) => {
     setHistory(prevHistory => {
+        const currentEntry = prevHistory[historyIndex];
+        if (!currentEntry) {
+            // This case should ideally not happen if logic is correct
+            console.error("History state is inconsistent.");
+            return prevHistory;
+        }
         const newEntry: HistoryEntry = {
-            state: { ...prevHistory[historyIndex].state, ...newState },
+            state: { ...currentEntry.state, ...newState },
             description,
             timestamp: Date.now()
         };
@@ -82,7 +88,10 @@ export default function StickerStudio() {
       const newWidth = 400;
       const newHeight = newWidth / aspectRatio;
       
+      const currentState = history[historyIndex]?.state;
+
       const nextState: Partial<StickerState> = {
+        ...(currentState || INITIAL_STATE),
         imageUrl: newImageUrl,
         width: newWidth,
         height: newHeight,
@@ -97,11 +106,7 @@ export default function StickerStudio() {
   };
   
   const handleReset = () => {
-    const nextState = {
-      ...INITIAL_STATE,
-      imageUrl: null, 
-    };
-    updateHistory(nextState, 'Reset Canvas');
+    updateHistory({...INITIAL_STATE, imageUrl: null}, 'Reset Canvas');
     setView('add');
   }
 
