@@ -114,7 +114,7 @@ export function AddNewPanel({ onImageUpdate, onNavigate }: AddNewPanelProps) {
           icon={<Smile size={24} />}
           title="Add Clipart"
           description="Choose from thousands of graphics"
-          disabled
+          onClick={() => onNavigate('add-clipart')}
         />
         <AddItemButton
           icon={<QrCode size={24} />}

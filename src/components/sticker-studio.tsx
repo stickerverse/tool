@@ -8,6 +8,8 @@ import { Separator } from './ui/separator';
 import { AddNewPanel } from './add-new-panel';
 import { AddTextPanel } from './add-text-panel';
 import { AddCodePanel } from './add-code-panel';
+import { AddClipartPanel } from './add-clipart-panel';
+
 
 export type StickerState = {
   key: number;
@@ -33,7 +35,7 @@ const INITIAL_STATE: StickerState = {
   borderColor: '#FFFFFF',
 };
 
-export type EditorView = 'add' | 'edit' | 'add-text' | 'add-code';
+export type EditorView = 'add' | 'edit' | 'add-text' | 'add-code' | 'add-clipart';
 
 export default function StickerStudio() {
   const [sticker, setSticker] = useState<StickerState>(INITIAL_STATE);
@@ -99,6 +101,13 @@ export default function StickerStudio() {
                 <AddCodePanel
                     onNavigateBack={() => navigateTo('add')}
                     onCodeAdd={handleImageUpdate}
+                />
+            );
+        case 'add-clipart':
+            return (
+                <AddClipartPanel
+                    onNavigateBack={() => navigateTo('add')}
+                    onClipartAdd={handleImageUpdate}
                 />
             );
         default:

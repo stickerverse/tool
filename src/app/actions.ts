@@ -5,6 +5,7 @@ import { removeBackground, type RemoveBackgroundInput } from '@/ai/flows/remove-
 import { cropImage, type CropImageInput } from '@/ai/flows/crop-image';
 import { generateTextImage, type GenerateTextImageInput } from '@/ai/flows/generate-text-image';
 import { generateQrCode, type GenerateQrCodeInput } from '@/ai/flows/generate-qr-code';
+import { generateClipart as generateClipartFlow, type GenerateClipartInput } from '@/ai/flows/generate-clipart';
 import { z } from 'zod';
 
 export async function removeImageBackground(
@@ -76,5 +77,23 @@ export async function createQrCode(
     console.error(e);
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
     return { error: `Failed to generate QR code: ${errorMessage}` };
+  }
+}
+
+export async function generateClipart(
+  input: GenerateClipartInput
+): Promise<{ imageDataUri: string } | { error: string }> {
+  try {
+    const GenerateClipartInputSchema = z.object({
+      prompt: z.string().min(1, 'Prompt cannot be empty.'),
+    });
+
+    const validatedInput = GenerateClipartInputSchema.parse(input);
+    const result = await generateClipartFlow(validatedInput);
+    return result;
+  } catch (e) {
+    console.error(e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    return { error: `Failed to generate clipart: ${errorMessage}` };
   }
 }
