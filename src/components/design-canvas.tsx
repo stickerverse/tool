@@ -6,25 +6,32 @@ import Image from 'next/image';
 import type { StickerState } from './sticker-studio';
 import { Skeleton } from './ui/skeleton';
 
-interface DesignCanvasProps extends Omit<StickerState, 'key'> {
+interface DesignCanvasProps {
+  sticker: StickerState;
   onUpdate: (updates: Partial<StickerState>) => void;
+  onCommit: (description: string) => void;
 }
 
 export function DesignCanvas({
-  imageUrl,
-  width,
-  height,
-  isFlipped,
-  borderWidth,
-  borderColor,
-  scale,
-  x,
-  y,
+  sticker,
   onUpdate,
+  onCommit,
 }: DesignCanvasProps) {
   const [isPanning, setIsPanning] = useState(false);
   const panStartRef = useRef({ x: 0, y: 0, imageX: 0, imageY: 0 });
   const canvasRef = useRef<HTMLDivElement>(null);
+
+  const {
+    imageUrl,
+    width,
+    height,
+    isFlipped,
+    borderWidth,
+    borderColor,
+    scale,
+    x,
+    y,
+  } = sticker;
 
   const onMouseDown = (e: MouseEvent<HTMLDivElement>) => {
     e.preventDefault();
@@ -51,6 +58,9 @@ export function DesignCanvas({
   };
 
   const onMouseUpOrLeave = () => {
+    if (isPanning) {
+      onCommit('Transform Layer');
+    }
     setIsPanning(false);
     if (canvasRef.current) {
         canvasRef.current.style.cursor = 'grab';
@@ -68,7 +78,9 @@ export function DesignCanvas({
       // Zoom out
       newScale = scale / zoomFactor;
     }
-    onUpdate({ scale: Math.max(0.1, Math.min(newScale, 10)) });
+    const finalScale = Math.max(0.1, Math.min(newScale, 10));
+    onUpdate({ scale: finalScale });
+    onCommit('Zoom Layer');
   };
 
 

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { DesignCanvas } from './design-canvas';
 import { PropertiesPanel } from './properties-panel';
 import { Separator } from './ui/separator';
@@ -57,20 +57,19 @@ export type EditorView = 'add' | 'edit' | 'add-text' | 'add-code' | 'add-clipart
 export default function StickerStudio() {
   const [history, setHistory] = useState<HistoryEntry[]>([INITIAL_HISTORY_ENTRY]);
   const [historyIndex, setHistoryIndex] = useState(0);
+  const [sticker, setSticker] = useState<StickerState>(INITIAL_STATE);
   const [view, setView] = useState<EditorView>('edit');
   
-  const currentStickerState = history[historyIndex].state;
+  useEffect(() => {
+    setSticker(history[historyIndex].state);
+  }, [history, historyIndex]);
 
   const updateHistory = useCallback((newState: Partial<StickerState>, description: string) => {
     setHistory(prevHistory => {
         const currentEntry = prevHistory[historyIndex];
-        if (!currentEntry) {
-            // This case should ideally not happen if logic is correct
-            console.error("History state is inconsistent.");
-            return prevHistory;
-        }
+        const updatedState = { ...currentEntry.state, ...newState };
         const newEntry: HistoryEntry = {
-            state: { ...currentEntry.state, ...newState },
+            state: updatedState,
             description,
             timestamp: Date.now()
         };
@@ -80,6 +79,14 @@ export default function StickerStudio() {
     });
     setHistoryIndex(prevIndex => prevIndex + 1);
   }, [historyIndex]);
+
+  const commitToHistory = (description: string) => {
+    updateHistory(sticker, description);
+  }
+
+  const handleLiveUpdate = (updates: Partial<StickerState>) => {
+    setSticker(prev => ({...prev, ...updates}));
+  }
 
   const handleImageUpdate = (newImageUrl: string, description: string) => {
     const img = new Image();
@@ -91,12 +98,12 @@ export default function StickerStudio() {
       const currentState = history[historyIndex]?.state;
 
       const nextState: Partial<StickerState> = {
-        ...(currentState || INITIAL_STATE),
+        ...sticker,
         imageUrl: newImageUrl,
         width: newWidth,
         height: newHeight,
         aspectRatio,
-        isFlipped: false, // Reset flip state for new image
+        isFlipped: false,
       };
 
       updateHistory(nextState, description);
@@ -106,7 +113,7 @@ export default function StickerStudio() {
   };
   
   const handleReset = () => {
-    updateHistory({...INITIAL_STATE, imageUrl: null}, 'Reset Canvas');
+    updateHistory(INITIAL_STATE, 'Reset Canvas');
     setView('add');
   }
 
@@ -142,7 +149,7 @@ export default function StickerStudio() {
         case 'edit':
             return (
                 <PropertiesPanel 
-                    sticker={currentStickerState} 
+                    sticker={sticker} 
                     onStickerChange={updateHistory}
                     onReset={handleReset}
                     onNavigate={navigateTo}
@@ -203,9 +210,9 @@ export default function StickerStudio() {
     <div className="flex flex-col md:flex-row h-screen bg-background text-foreground overflow-hidden">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative" style={gridStyle}>
         <DesignCanvas 
-            key={history[historyIndex].timestamp} 
-            {...currentStickerState} 
-            onUpdate={(updates) => updateHistory(updates, 'Transform Layer')} 
+            sticker={sticker}
+            onUpdate={handleLiveUpdate} 
+            onCommit={commitToHistory}
         />
       </div>
       <Separator orientation="vertical" className="hidden md:block bg-border/50" />
