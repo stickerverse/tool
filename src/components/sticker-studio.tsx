@@ -61,9 +61,16 @@ export default function StickerStudio() {
 
   const { key, ...designCanvasProps } = sticker;
 
+  const gridStyle = {
+    backgroundSize: '40px 40px',
+    backgroundImage:
+      'linear-gradient(to right, hsl(var(--border)) 1px, transparent 1px), linear-gradient(to bottom, hsl(var(--border)) 1px, transparent 1px)',
+    backgroundPosition: 'center center',
+  };
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-background text-foreground overflow-hidden">
-      <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative">
+      <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative" style={gridStyle}>
         <DesignCanvas key={key} {...designCanvasProps} />
       </div>
       <Separator orientation="vertical" className="hidden md:block bg-border/50" />
