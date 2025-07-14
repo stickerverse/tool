@@ -5,7 +5,9 @@ import Image from 'next/image';
 import type { StickerState } from './sticker-studio';
 import { Skeleton } from './ui/skeleton';
 
-export function DesignCanvas({ key, imageUrl, width, height, isFlipped, borderWidth, borderColor }: StickerState) {
+// The key is destructured but not used because it's a special React prop for list reconciliation.
+// We remove it from the props passed to the component to avoid confusion.
+export function DesignCanvas({ imageUrl, width, height, isFlipped, borderWidth, borderColor }: Omit<StickerState, 'key'>) {
 
   const containerStyle: React.CSSProperties = {
     width: `${width}px`,
@@ -27,7 +29,6 @@ export function DesignCanvas({ key, imageUrl, width, height, isFlipped, borderWi
     <div id="design-canvas" className="relative transition-all duration-300 ease-in-out flex items-center justify-center" style={containerStyle}>
       {imageUrl ? (
         <Image
-          key={key}
           src={imageUrl}
           alt="Sticker design"
           width={width}

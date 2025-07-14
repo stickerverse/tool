@@ -59,10 +59,12 @@ export default function StickerStudio() {
     }));
   }
 
+  const { key, ...designCanvasProps } = sticker;
+
   return (
     <div className="flex flex-col md:flex-row h-screen bg-background text-foreground overflow-hidden">
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative">
-        <DesignCanvas {...sticker} />
+        <DesignCanvas key={key} {...designCanvasProps} />
       </div>
       <Separator orientation="vertical" className="hidden md:block bg-border/50" />
       <div className="w-full md:w-[360px] flex-shrink-0 bg-card border-l border-border/50">
