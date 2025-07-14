@@ -6,7 +6,7 @@ import { removeImageBackground } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Upload, Wand2, Loader2 } from 'lucide-react';
+import { Image, Loader2 } from 'lucide-react';
 
 interface BackgroundRemoverProps {
   onImageUpdate: (newImageUrl: string) => void;
@@ -71,28 +71,32 @@ export function BackgroundRemover({ onImageUpdate, stickerImage }: BackgroundRem
     }
   };
 
+  const handleButtonClick = () => {
+    if(!stickerImage) {
+        fileInputRef.current?.click();
+    } else {
+        handleRemoveBackground();
+    }
+  }
+
   return (
     <div className="space-y-3">
-      <Input
-        type="file"
-        ref={fileInputRef}
-        onChange={handleFileChange}
-        className="hidden"
-        accept="image/*"
-      />
-      <div className="grid grid-cols-2 gap-2">
-        <Button onClick={() => fileInputRef.current?.click()} variant="outline" className="w-full">
-          <Upload className="mr-2 h-4 w-4" /> Upload
-        </Button>
-        <Button onClick={handleRemoveBackground} disabled={isProcessing || !stickerImage} className="w-full">
+        <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Background</h3>
+        <Input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            className="hidden"
+            accept="image/*"
+        />
+        <Button onClick={handleButtonClick} disabled={isProcessing} className="w-full justify-center h-10 bg-zinc-800 border-zinc-700 hover:bg-zinc-700">
           {isProcessing ? (
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
           ) : (
-            <Wand2 className="mr-2 h-4 w-4" />
+            <Image className="mr-2 h-4 w-4" />
           )}
-          Erase BG
+          Erase Background
         </Button>
-      </div>
     </div>
   );
 }

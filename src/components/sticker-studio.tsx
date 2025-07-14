@@ -52,7 +52,11 @@ export default function StickerStudio() {
   };
 
   const handleReset = () => {
-    setSticker(INITIAL_STATE);
+    setSticker(s => ({
+      ...INITIAL_STATE,
+      key: Date.now(), // Ensure a re-render
+      imageUrl: null, // Clear the image
+    }));
   }
 
   return (
@@ -60,8 +64,8 @@ export default function StickerStudio() {
       <div className="flex-1 flex items-center justify-center p-4 md:p-8 relative">
         <DesignCanvas {...sticker} />
       </div>
-      <Separator orientation="vertical" className="hidden md:block" />
-      <div className="w-full md:w-[360px] flex-shrink-0 bg-card/50 md:bg-transparent">
+      <Separator orientation="vertical" className="hidden md:block bg-border/50" />
+      <div className="w-full md:w-[360px] flex-shrink-0 bg-card border-l border-border/50">
         <PropertiesPanel sticker={sticker} setSticker={setSticker} onImageUpdate={handleImageUpdate} onReset={handleReset} />
       </div>
     </div>

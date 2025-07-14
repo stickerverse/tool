@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Camera } from 'lucide-react';
+import { Save } from 'lucide-react';
 import { Button } from './ui/button';
 import { useToast } from '@/hooks/use-toast';
 import html2canvas from 'html2canvas';
@@ -13,7 +13,7 @@ export function ScreenshotButton() {
     const canvasElement = document.getElementById('design-canvas');
     if (canvasElement) {
       toast({
-        title: "Capturing your masterpiece...",
+        title: "Saving your masterpiece...",
       });
       html2canvas(canvasElement, {
         backgroundColor: null,
@@ -24,10 +24,10 @@ export function ScreenshotButton() {
         link.href = canvas.toDataURL('image/png');
         link.click();
       }).catch(err => {
-        console.error("Failed to take screenshot:", err);
+        console.error("Failed to save image:", err);
         toast({
             variant: "destructive",
-            title: "Screenshot Failed",
+            title: "Save Failed",
             description: "Could not capture the design. Please try again.",
         });
       });
@@ -41,9 +41,9 @@ export function ScreenshotButton() {
   };
 
   return (
-    <Button variant="outline" onClick={takeScreenshot}>
-      <Camera className="mr-2 h-4 w-4" />
-      Screenshot
+    <Button variant="ghost" onClick={takeScreenshot} className="flex-col h-auto">
+      <Save className="w-5 h-5 mb-1" />
+      Save
     </Button>
   );
 }
