@@ -7,6 +7,7 @@ import { PropertiesPanel } from './properties-panel';
 import { Separator } from './ui/separator';
 import { AddNewPanel } from './add-new-panel';
 import { AddTextPanel } from './add-text-panel';
+import { AddCodePanel } from './add-code-panel';
 
 export type StickerState = {
   key: number;
@@ -32,7 +33,7 @@ const INITIAL_STATE: StickerState = {
   borderColor: '#FFFFFF',
 };
 
-type EditorView = 'add' | 'edit' | 'add-text';
+export type EditorView = 'add' | 'edit' | 'add-text' | 'add-code';
 
 export default function StickerStudio() {
   const [sticker, setSticker] = useState<StickerState>(INITIAL_STATE);
@@ -92,7 +93,14 @@ export default function StickerStudio() {
                     onNavigateBack={() => navigateTo('add')}
                     onTextAdd={handleImageUpdate}
                 />
-            )
+            );
+        case 'add-code':
+            return (
+                <AddCodePanel
+                    onNavigateBack={() => navigateTo('add')}
+                    onCodeAdd={handleImageUpdate}
+                />
+            );
         default:
             return null;
     }

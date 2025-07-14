@@ -16,10 +16,12 @@ import {
   Save,
   CheckCircle2,
 } from 'lucide-react';
+import type { EditorView } from './sticker-studio';
+
 
 interface AddNewPanelProps {
   onImageUpdate: (newImageUrl: string) => void;
-  onNavigate: (view: 'add-text') => void;
+  onNavigate: (view: EditorView) => void;
 }
 
 interface AddItemButtonProps {
@@ -118,7 +120,7 @@ export function AddNewPanel({ onImageUpdate, onNavigate }: AddNewPanelProps) {
           icon={<QrCode size={24} />}
           title="Add Code"
           description="Create scannable QR and bar codes"
-          disabled
+          onClick={() => onNavigate('add-code')}
         />
       </div>
 
