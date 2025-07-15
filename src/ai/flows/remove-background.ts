@@ -51,17 +51,18 @@ const removeBackgroundFlow = ai.defineFlow(
 
     // Step 1: Use the AI to generate a PRECISE black and white mask.
     const response = await ai.generate({
-      prompt: `TASK: Generate a binary segmentation mask.
+      prompt: [
+        {text: `TASK: Generate a binary segmentation mask.
       INPUT: An image.
       OUTPUT: A pure black and white mask image.
       RULES:
       1.  The primary subject MUST be solid white (#FFFFFF).
       2.  The background MUST be solid black (#000000).
       3.  The output MUST be only the image. NO text, NO explanations, NO additional content.
-      4.  The mask must be precise.`,
+      4.  The mask must be precise.`},
+        {media: {data: originalImageBase64, mimeType: mimeType}},
+      ],
       model: 'googleai/gemini-1.5-flash-latest',
-      
-      media: [{data: originalImageBase64, mimeType: mimeType}],
       
       output: {
         format: 'media',
