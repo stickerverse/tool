@@ -41,11 +41,11 @@ const removeBackgroundFlow = ai.defineFlow(
     outputSchema: RemoveBackgroundOutputSchema,
   },
   async input => {
-    // STEP 1: Generate the segmentation mask using Gemini Vision
-    const {media: maskMedia, finishReason: maskFinishReason} = await ai.generate({
+    // STEP 1: Generate the segmentation mask using Gemini 1.5 Flash
+    const {media: maskMedia, finishReason} = await ai.generate({
       model: 'googleai/gemini-1.5-flash-latest',
       prompt: [
-        {text: `**Do not generate a new image.** You must only edit the provided image. Analyze the following image and identify the main subject(s). Generate a precise, black and white segmentation mask. The subject(s) should be solid white. The background should be solid black. Do not add any other text, explanation, or formatting. The output must be the image mask only.`},
+        {text: `**Do not generate a new image.** You must only create a mask for the provided image. Analyze the following image and identify the main subject(s). Generate a precise, black and white segmentation mask. The subject(s) should be solid white. The background should be solid black. Do not add any other text, explanation, or formatting. The output must be the image mask only.`},
         {media: {url: input.photoDataUri}}
       ],
       config: { 
@@ -62,7 +62,7 @@ const removeBackgroundFlow = ai.defineFlow(
     const maskBase64 = maskMedia?.url?.split(';base64,').pop();
 
     if (!maskBase64) {
-      throw new Error(`Failed to generate a valid segmentation mask from the AI model. Finish Reason: ${maskFinishReason}`);
+      throw new Error(`Failed to generate a valid segmentation mask from the AI model. The model did not return image data. Finish Reason: ${finishReason}`);
     }
 
     // STEP 2: Apply the mask to the original image using Sharp
@@ -89,8 +89,8 @@ const removeBackgroundFlow = ai.defineFlow(
 
       return { removedBackgroundDataUri: finalImageDataUri };
     } catch (error) {
-      console.error('Error during image processing with Sharp:', error);
-      throw new Error('Failed to apply the mask to the original image.');
+      console.error('Image processing error with Sharp:', error);
+      throw new Error('Failed to apply the generated mask to the original image.');
     }
   }
 );
