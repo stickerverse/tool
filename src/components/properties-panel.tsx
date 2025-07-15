@@ -132,7 +132,10 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate }: P
             <>
               <div className="grid grid-cols-2 gap-4">
                 <ImageUploader onImageUpdate={handleImageUpdate} />
-                <BackgroundRemover onImageUpdate={handleImageUpdate} stickerImage={layer.imageUrl} />
+                <BackgroundRemover 
+                  onImageUpdate={(newUrl) => onLayerChange(layer.id, { imageUrl: newUrl }, 'Remove Background')} 
+                  stickerImage={layer.imageUrl} 
+                />
               </div>
               <Separator className="bg-border/50" />
             </>

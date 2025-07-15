@@ -32,17 +32,6 @@ export async function removeBackground(input: RemoveBackgroundInput): Promise<Re
   return removeBackgroundFlow(input);
 }
 
-const prompt = ai.definePrompt({
-  name: 'removeBackgroundPrompt',
-  input: {schema: RemoveBackgroundInputSchema},
-  output: {schema: RemoveBackgroundOutputSchema},
-  prompt: `Remove the background from this image: {{media url=photoDataUri}}`,
-  model: 'googleai/gemini-2.0-flash-preview-image-generation',
-  config: {
-    responseModalities: ['TEXT', 'IMAGE'],
-  },
-});
-
 const removeBackgroundFlow = ai.defineFlow(
   {
     name: 'removeBackgroundFlow',
@@ -53,14 +42,18 @@ const removeBackgroundFlow = ai.defineFlow(
     const {media} = await ai.generate({
       prompt: [
         {media: {url: input.photoDataUri}},
-        {text: 'Remove the background from this image.'},
+        {text: 'Remove the background from this image. The output should be a PNG with a transparent background.'},
       ],
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
       },
     });
+    
+    if (!media?.url) {
+        throw new Error("The AI model did not return an image.");
+    }
 
-    return {removedBackgroundDataUri: media!.url!};
+    return {removedBackgroundDataUri: media.url};
   }
 );
