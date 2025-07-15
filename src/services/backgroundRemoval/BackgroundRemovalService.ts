@@ -22,10 +22,19 @@ export class BackgroundRemovalService {
     std: [0.229, 0.224, 0.225],
   };
 
-  async initialize(modelPath?: string): Promise<void> {
-    if (this.isInitialized && this.session) return;
+ // Update the initialize method to handle GitHub Codespaces environment
+async initialize(modelPath?: string): Promise<void> {
+  if (this.isInitialized && this.session) return;
 
-    console.log('Initializing ONNX Runtime...');
+  console.log('Initializing ONNX Runtime...');
+  
+  try {
+    // Configure ONNX Runtime to use the correct paths
+    const ortBaseUrl = window.location.origin + '/';
+    console.log('Setting ORT base URL to:', ortBaseUrl);
+    
+    // Set ONNX Runtime base URL for loading WASM files
+    ort.env.wasm.wasmPaths = ortBaseUrl;
     
     // Try multiple model paths with fallback
     const modelPaths = modelPath ? [modelPath] : [
@@ -39,19 +48,17 @@ export class BackgroundRemovalService {
       try {
         console.log(`Attempting to load model from: ${modelUrl}`);
 
-        // Create session with WebGL if available, fallback to WASM
+        // Create session with WASM only since WebGL might be problematic in Codespaces
         this.session = await ort.InferenceSession.create(modelUrl, {
-          executionProviders: ['webgl', 'wasm'],
+          executionProviders: ['wasm'],
           graphOptimizationLevel: 'all',
           enableCpuMemArena: true,
           enableMemPattern: true,
           executionMode: 'sequential',
-          logSeverityLevel: 0,
+          logSeverityLevel: 1, // Increase log level for debugging
         });
 
         console.log('✅ Model loaded successfully from:', modelUrl);
-        console.log('Input names:', this.session.inputNames);
-        console.log('Output names:', this.session.outputNames);
         
         // Verify expected input shape
         const inputName = this.session.inputNames[0];
@@ -85,11 +92,12 @@ export class BackgroundRemovalService {
       }
     }
 
-    // If we get here, all model loading attempts failed
-    console.error('All model loading attempts failed');
-    throw new Error(`Failed to initialize any model. Last error: ${lastError?.message || 'Unknown error'}`);
+    throw lastError || new Error('Failed to initialize any model');
+  } catch (error) {
+    console.error('Model initialization failed:', error);
+    throw error;
   }
-
+}
   async removeBackground(
     file: File,
     options?: ProcessingOptions
