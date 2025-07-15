@@ -5,6 +5,7 @@ import { removeBackground, type RemoveBackgroundInput } from '@/ai/flows/remove-
 import { cropImage, type CropImageInput } from '@/ai/flows/crop-image';
 import { generateQrCode, type GenerateQrCodeInput } from '@/ai/flows/generate-qr-code';
 import { generateClipart as generateClipartFlow, type GenerateClipartInput } from '@/ai/flows/generate-clipart';
+import { addBorderToImage, type AddBorderInput } from '@/ai/flows/add-border';
 import { z } from 'zod';
 
 export async function removeImageBackground(
@@ -76,5 +77,25 @@ export async function generateClipart(
     console.error(e);
     const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
     return { error: `Failed to generate clipart: ${errorMessage}` };
+  }
+}
+
+export async function addBorder(
+  input: AddBorderInput
+): Promise<{ borderedImageDataUri: string } | { error: string }> {
+  try {
+    const AddBorderInputSchema = z.object({
+        photoDataUri: z.string(),
+        borderColor: z.string(),
+        borderWidth: z.number(),
+    });
+
+    const validatedInput = AddBorderInputSchema.parse(input);
+    const result = await addBorderToImage(validatedInput);
+    return result;
+  } catch (e) {
+    console.error(e);
+    const errorMessage = e instanceof Error ? e.message : 'An unknown error occurred.';
+    return { error: `Failed to add border: ${errorMessage}` };
   }
 }

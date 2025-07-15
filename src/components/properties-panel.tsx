@@ -3,12 +3,12 @@
 
 import type { Layer, EditorView } from './sticker-studio';
 import { Button } from './ui/button';
-import { Input } from './ui/input';
 import { Separator } from './ui/separator';
 import { BackgroundRemover } from './background-remover';
 import { ScreenshotButton } from './screenshot-button';
 import { ImageUploader } from './image-uploader';
 import { ImageCropper } from './image-cropper';
+import { StickerBorder } from './sticker-border';
 import {
   FlipHorizontal,
   Lock,
@@ -17,8 +17,6 @@ import {
   ChevronLeft,
   Minus,
   Plus,
-  Eye,
-  EyeOff,
   Layers,
   CheckCircle2,
   Copy,
@@ -93,18 +91,8 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate }: P
     }, `Resize to ${Math.round(newWidth)}x${Math.round(newHeight)}`);
   };
 
-  const handleBorderWidthChange = (amount: number) => {
-    const newBorderWidth = Math.max(0, (layer.borderWidth || 0) + amount);
-    onLayerChange(layer.id, { borderWidth: newBorderWidth }, `Set border to ${newBorderWidth}px`);
-  }
-
-  const toggleBorder = () => {
-    const newBorderWidth = (layer.borderWidth || 0) > 0 ? 0 : 4;
-    onLayerChange(layer.id, { borderWidth: newBorderWidth }, newBorderWidth > 0 ? 'Show Border' : 'Hide Border');
-  }
-
-  const handleImageUpdate = (newImageUrl: string) => {
-    onLayerChange(layer.id, { imageUrl: newImageUrl }, 'Update Image');
+  const handleImageUpdate = (newImageUrl: string, description: string) => {
+    onLayerChange(layer.id, { imageUrl: newImageUrl }, description);
   };
 
   const onImageCrop = (newImageUrl: string, shape: string) => {
@@ -131,7 +119,7 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate }: P
           {isImageLayer && (
             <>
               <div className="grid grid-cols-2 gap-4">
-                <ImageUploader onImageUpdate={handleImageUpdate} />
+                <ImageUploader onImageUpdate={(url) => handleImageUpdate(url, 'Update Image')} />
                 <BackgroundRemover 
                   onImageUpdate={(newUrl) => onLayerChange(layer.id, { imageUrl: newUrl }, 'Remove Background')} 
                   stickerImage={layer.imageUrl} 
@@ -183,38 +171,10 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate }: P
               
               <Separator className="bg-border/50" />
               
-              <ControlSection title="Border">
-                <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                        <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Color</h3>
-                        <Input
-                          id="border-color"
-                          type="color"
-                          value={layer.borderColor}
-                          onChange={(e) => onLayerChange(layer.id, { borderColor: e.target.value }, `Set border color to ${e.target.value}`)}
-                          className="p-1 h-10 w-full bg-zinc-800 border-zinc-700"
-                        />
-                    </div>
-                    <div className="space-y-3">
-                        <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Size</h3>
-                      <ButtonGroup>
-                        <ButtonGroupButton onClick={() => handleBorderWidthChange(-1)}><Minus /></ButtonGroupButton>
-                        <ButtonGroupButton onClick={() => handleBorderWidthChange(1)}><Plus /></ButtonGroupButton>
-                      </ButtonGroup>
-                    </div>
-                </div>
-                 <div className="space-y-3 mt-4">
-                    <h3 className="text-xs font-semibold uppercase text-muted-foreground tracking-wider">Show/Hide</h3>
-                   <ButtonGroup>
-                    <ButtonGroupButton onClick={toggleBorder} active={(layer.borderWidth || 0) > 0}>
-                        <Eye />
-                    </ButtonGroupButton>
-                    <ButtonGroupButton onClick={() => onLayerChange(layer.id, {borderWidth: 0}, 'Hide Border')} active={(layer.borderWidth || 0) === 0}>
-                        <EyeOff />
-                    </ButtonGroupButton>
-                  </ButtonGroup>
-                </div>
-              </ControlSection>
+              <StickerBorder 
+                layer={layer} 
+                onImageUpdate={(url) => handleImageUpdate(url, 'Update Border')} 
+              />
 
               <Separator className="bg-border/50" />
             </>
