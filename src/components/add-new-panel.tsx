@@ -71,8 +71,17 @@ export function AddNewPanel({ onImageUpdate, onNavigate }: AddNewPanelProps) {
     const reader = new FileReader();
     reader.onload = (e) => {
       const dataUri = e.target?.result as string;
-      onImageUpdate(dataUri);
+      if (dataUri) {
+        onImageUpdate(dataUri);
+      }
     };
+    reader.onerror = () => {
+        toast({
+            variant: 'destructive',
+            title: 'File Read Error',
+            description: 'Could not read the selected file.',
+        });
+    }
     reader.readAsDataURL(file);
   };
 
