@@ -45,7 +45,7 @@ const addBorderFlow = ai.defineFlow(
     const {media} = await ai.generate({
       prompt: [
         {media: {url: input.photoDataUri}},
-        {text: `First, identify the main subject in the image and completely remove the background, making it transparent. Then, add a solid, sticker-style border that follows the exact contour of the isolated subject. The border should be ${input.borderWidth} pixels wide and have the color ${input.borderColor}. The final output must be a PNG image with a transparent background outside the new border.`},
+        {text: `Follow these steps precisely: 1. Fill the transparent background of the provided image with a solid, temporary color like magenta. 2. Identify the main subject of the image. 3. Add a solid, sticker-style border that follows the exact contour of the isolated subject. The border should be ${input.borderWidth} pixels wide and have the color ${input.borderColor}. 4. Finally, make the temporary background (the magenta color) completely transparent. The final output must be a PNG image with only the subject and its new border visible on a transparent background.`},
       ],
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       config: {

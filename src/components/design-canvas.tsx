@@ -85,7 +85,6 @@ const LayerComponent = ({
         transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale})`,
         transition: isPanning ? 'none' : 'transform 0.1s ease-out',
         borderRadius: '8px',
-        boxShadow: `0 0 0 1px hsla(var(--foreground), 0.1)`,
     };
     
     const imageStyle: React.CSSProperties = {
