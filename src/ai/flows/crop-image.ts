@@ -41,25 +41,19 @@ const cropImageFlow = ai.defineFlow(
     outputSchema: CropImageOutputSchema,
   },
   async (input) => {
-    const {media} = await ai.generate({
+    const {media, finishReason} = await ai.generate({
       prompt: [
         {media: {url: input.photoDataUri}},
-        {text: `**Do not generate a new image.** You must only edit the provided image. Crop this image into a ${input.shape} shape. The object in the image should be centered within the shape.`},
+        {text: `**Do not generate a new image.** You must only edit the provided image. Crop this image into a ${input.shape} shape. The object in the image should be centered within the shape. The final image should have a transparent background.`},
       ],
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       config: {
         responseModalities: ['TEXT', 'IMAGE'],
-        safetySettings: [
-          {
-              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-              threshold: 'BLOCK_ONLY_HIGH',
-          },
-        ],
       },
     });
 
     if (!media?.url) {
-        throw new Error("The AI model did not return an image.");
+        throw new Error(`The AI model did not return an image. Finish Reason: ${finishReason}`);
     }
 
     return {croppedImageDataUri: media.url};

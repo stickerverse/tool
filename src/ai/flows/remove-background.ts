@@ -10,7 +10,6 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
-import sharp from 'sharp';
 
 const RemoveBackgroundInputSchema = z.object({
   photoDataUri: z
@@ -40,57 +39,22 @@ const removeBackgroundFlow = ai.defineFlow(
     inputSchema: RemoveBackgroundInputSchema,
     outputSchema: RemoveBackgroundOutputSchema,
   },
-  async input => {
-    // STEP 1: Generate the segmentation mask using Gemini 1.5 Flash
-    const {media: maskMedia, finishReason} = await ai.generate({
-      model: 'googleai/gemini-1.5-flash-latest',
+  async (input) => {
+    const {media, finishReason} = await ai.generate({
       prompt: [
-        {text: `**Do not generate a new image.** You must only create a mask for the provided image. Analyze the following image and identify the main subject(s). Generate a precise, black and white segmentation mask. The subject(s) should be solid white. The background should be solid black. Do not add any other text, explanation, or formatting. The output must be the image mask only.`},
-        {media: {url: input.photoDataUri}}
+        {media: {url: input.photoDataUri}},
+        {text: `**Do not generate a new image.** You must only edit the provided image. Identify the main subject and make the background transparent. The final output must be a PNG image with only the subject visible on a transparent background.`},
       ],
-      config: { 
-        responseModalities: ['IMAGE', 'TEXT'],
-        safetySettings: [
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_ONLY_HIGH',
-          },
-        ],
+      model: 'googleai/gemini-2.0-flash-preview-image-generation',
+      config: {
+        responseModalities: ['TEXT', 'IMAGE'],
       },
     });
 
-    const maskBase64 = maskMedia?.url?.split(';base64,').pop();
-
-    if (!maskBase64) {
-      throw new Error(`Failed to generate a valid segmentation mask from the AI model. The model did not return image data. Finish Reason: ${finishReason}`);
+    if (!media?.url) {
+      throw new Error(`The AI model failed to generate an image. Finish Reason: ${finishReason}`);
     }
 
-    // STEP 2: Apply the mask to the original image using Sharp
-    const originalImageBase64 = input.photoDataUri.split(';base64,').pop();
-    if (!originalImageBase64) {
-      throw new Error('Invalid input image data URI.');
-    }
-    
-    try {
-      const originalImageBuffer = Buffer.from(originalImageBase64, 'base64');
-      const maskImageBuffer = Buffer.from(maskBase64, 'base64');
-
-      const finalImageBuffer = await sharp(originalImageBuffer)
-        .composite([
-          {
-            input: maskImageBuffer,
-            blend: 'dest-in',
-          },
-        ])
-        .toFormat('png')
-        .toBuffer();
-
-      const finalImageDataUri = `data:image/png;base64,${finalImageBuffer.toString('base64')}`;
-
-      return { removedBackgroundDataUri: finalImageDataUri };
-    } catch (error) {
-      console.error('Image processing error with Sharp:', error);
-      throw new Error('Failed to apply the generated mask to the original image.');
-    }
+    return {removedBackgroundDataUri: media.url};
   }
 );
