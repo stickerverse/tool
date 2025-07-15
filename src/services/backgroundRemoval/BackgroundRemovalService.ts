@@ -17,7 +17,7 @@ export class BackgroundRemovalService {
   private isInitialized = false;
   private modelConfig: ModelConfig = {
     name: 'u2net',
-    inputSize: 1024, // Updated from 320 to 1024
+    inputSize: 320, // U2Net expects 320x320 input
     mean: [0.485, 0.456, 0.406],
     std: [0.229, 0.224, 0.225],
   };
@@ -25,45 +25,69 @@ export class BackgroundRemovalService {
   async initialize(modelPath?: string): Promise<void> {
     if (this.isInitialized && this.session) return;
 
-    try {
-      console.log('Initializing ONNX Runtime...');
-      
-      const modelUrl = modelPath || '/models/u2net.onnx';
-      console.log(`Loading model from: ${modelUrl}`);
+    console.log('Initializing ONNX Runtime...');
+    
+    // Try multiple model paths with fallback
+    const modelPaths = modelPath ? [modelPath] : [
+      '/models/u2net.onnx',
+      '/models/u2net_small.onnx'
+    ];
 
-      // Create session with WebGL if available, fallback to WASM
-      this.session = await ort.InferenceSession.create(modelUrl, {
-        executionProviders: ['webgl', 'wasm'],
-        graphOptimizationLevel: 'all',
-        enableCpuMemArena: true,
-        enableMemPattern: true,
-        executionMode: 'sequential',
-        logSeverityLevel: 0,
-      });
+    let lastError: Error | null = null;
 
-      console.log('✅ Model loaded successfully');
-      console.log('Input names:', this.session.inputNames);
-      console.log('Output names:', this.session.outputNames);
-      
-      // Verify expected input shape
-      const inputName = this.session.inputNames[0];
-      const inputInfo = this.session.inputMetadata[inputName];
-      console.log('Expected input shape:', inputInfo?.dims);
-      
-      // Update model config based on actual model requirements
-      if (inputInfo?.dims && inputInfo.dims.length === 4) {
-        const expectedSize = inputInfo.dims[2]; // Assuming NCHW format
-        if (expectedSize && expectedSize !== this.modelConfig.inputSize) {
-          console.log(`Updating input size from ${this.modelConfig.inputSize} to ${expectedSize}`);
-          this.modelConfig.inputSize = expectedSize;
+    for (const modelUrl of modelPaths) {
+      try {
+        console.log(`Attempting to load model from: ${modelUrl}`);
+
+        // Create session with WebGL if available, fallback to WASM
+        this.session = await ort.InferenceSession.create(modelUrl, {
+          executionProviders: ['webgl', 'wasm'],
+          graphOptimizationLevel: 'all',
+          enableCpuMemArena: true,
+          enableMemPattern: true,
+          executionMode: 'sequential',
+          logSeverityLevel: 0,
+        });
+
+        console.log('✅ Model loaded successfully from:', modelUrl);
+        console.log('Input names:', this.session.inputNames);
+        console.log('Output names:', this.session.outputNames);
+        
+        // Verify expected input shape
+        const inputName = this.session.inputNames[0];
+        const inputInfo = this.session.inputMetadata[inputName];
+        console.log('Expected input shape:', inputInfo?.dims);
+        
+        // Update model config based on actual model requirements
+        if (inputInfo?.dims && inputInfo.dims.length === 4) {
+          const expectedSize = inputInfo.dims[2]; // Assuming NCHW format
+          if (expectedSize && expectedSize !== this.modelConfig.inputSize) {
+            console.log(`Updating input size from ${this.modelConfig.inputSize} to ${expectedSize}`);
+            this.modelConfig.inputSize = expectedSize;
+          }
+        }
+        
+        this.isInitialized = true;
+        return; // Success, exit the loop
+      } catch (error) {
+        console.warn(`Failed to load model from ${modelUrl}:`, error);
+        lastError = error instanceof Error ? error : new Error('Unknown error');
+        
+        // Clean up session if it was partially created
+        if (this.session) {
+          try {
+            this.session.release();
+          } catch (e) {
+            console.warn('Error releasing failed session:', e);
+          }
+          this.session = null;
         }
       }
-      
-      this.isInitialized = true;
-    } catch (error) {
-      console.error('Model initialization failed:', error);
-      throw new Error(`Failed to initialize model: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
+
+    // If we get here, all model loading attempts failed
+    console.error('All model loading attempts failed');
+    throw new Error(`Failed to initialize any model. Last error: ${lastError?.message || 'Unknown error'}`);
   }
 
   async removeBackground(
