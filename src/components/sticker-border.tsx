@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { addBorder } from '@/app/actions';
+import { addBorder, removeImageBackground } from '@/app/actions';
 import { Loader2, Palette } from 'lucide-react';
 import type { Layer } from './sticker-studio';
 
@@ -32,24 +32,40 @@ export function StickerBorder({ layer, onImageUpdate }: StickerBorderProps) {
     }
 
     setIsProcessing(true);
-    toast({ title: "AI is at work...", description: "Adding a sticker border." });
-    
-    const result = await addBorder({ 
-        photoDataUri: layer.imageUrl,
+    toast({ title: "AI is at work...", description: "Step 1/2: Preparing image..." });
+
+    // Step 1: Ensure background is removed to get a clean subject.
+    const bgRemovalResult = await removeImageBackground({ photoDataUri: layer.imageUrl });
+
+    if ('error' in bgRemovalResult) {
+      toast({
+        variant: "destructive",
+        title: "Failed to Prepare Image",
+        description: bgRemovalResult.error,
+      });
+      setIsProcessing(false);
+      return;
+    }
+
+    toast({ title: "AI is at work...", description: "Step 2/2: Adding sticker border..." });
+
+    // Step 2: Add border to the image with the removed background.
+    const borderResult = await addBorder({ 
+        photoDataUri: bgRemovalResult.removedBackgroundDataUri,
         borderColor,
         borderWidth: Number(borderWidth),
     });
     
     setIsProcessing(false);
 
-    if ('error' in result) {
+    if ('error' in borderResult) {
       toast({
         variant: "destructive",
         title: "Failed to Add Border",
-        description: result.error,
+        description: borderResult.error,
       });
     } else {
-      onImageUpdate(result.borderedImageDataUri);
+      onImageUpdate(borderResult.borderedImageDataUri);
       toast({
         title: "Success!",
         description: "Sticker border has been added.",
@@ -90,7 +106,7 @@ export function StickerBorder({ layer, onImageUpdate }: StickerBorderProps) {
             <Input
               id="border-width"
               type="number"
-              value={borderWidth}
+              value={borderWidth === 0 ? '' : borderWidth}
               onChange={handleBorderWidthChange}
               min="1"
               max="20"
