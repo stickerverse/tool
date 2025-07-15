@@ -26,8 +26,6 @@ export type Layer = {
   aspectRatio?: number;
   proportionsLocked?: boolean;
   isFlipped?: boolean;
-  borderWidth?: number;
-  borderColor?: string;
   // Text specific
   text?: string;
   font?: string;
@@ -44,8 +42,6 @@ const INITIAL_LAYER: Layer = {
     aspectRatio: 1,
     proportionsLocked: true,
     isFlipped: false,
-    borderWidth: 4,
-    borderColor: '#FFFFFF',
     scale: 1,
     x: 0,
     y: 0,

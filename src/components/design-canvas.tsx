@@ -84,7 +84,6 @@ const LayerComponent = ({
         cursor: 'grab',
         transform: `translate(${layer.x}px, ${layer.y}px) scale(${layer.scale})`,
         transition: isPanning ? 'none' : 'transform 0.1s ease-out',
-        border: layer.borderWidth ? `${layer.borderWidth}px solid ${layer.borderColor}` : 'none',
         borderRadius: '8px',
         boxShadow: `0 0 0 1px hsla(var(--foreground), 0.1)`,
     };
