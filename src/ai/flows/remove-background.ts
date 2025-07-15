@@ -50,7 +50,7 @@ const removeBackgroundFlow = ai.defineFlow(
     const originalImageBase64 = parts[2];
 
     // Step 1: Use the AI to generate a PRECISE black and white mask.
-    const {media, finishReason} = await ai.generate({
+    const response = await ai.generate({
       prompt: `TASK: Generate a binary segmentation mask.
       INPUT: An image.
       OUTPUT: A pure black and white mask image.
@@ -70,16 +70,32 @@ const removeBackgroundFlow = ai.defineFlow(
 
       config: {
         safetySettings: [
-          {
-            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
-            threshold: 'BLOCK_ONLY_HIGH',
-          },
-        ]
+            {
+              category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+              category: 'HARM_CATEGORY_HARASSMENT',
+              threshold: 'BLOCK_NONE',
+            },
+            {
+                category: 'HARM_CATEGORY_HATE_SPEECH',
+                threshold: 'BLOCK_NONE',
+            },
+            {
+                category: 'HARM_CATEGORY_SEXUALLY_EXPLICIT',
+                threshold: 'BLOCK_NONE',
+            },
+        ],
       }
     });
 
+    const media = response.media;
+    const finishReason = response.finishReason;
+
     if (!media?.data) {
-      throw new Error(`AI failed to generate a valid segmentation mask. Finish Reason: ${finishReason}`);
+      const textResponse = response.text;
+      throw new Error(`AI failed to generate a valid segmentation mask. Finish Reason: ${finishReason}. AI Text Response: "${textResponse}"`);
     }
     const maskBase64 = media.data;
     
