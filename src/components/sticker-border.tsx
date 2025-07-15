@@ -18,7 +18,7 @@ interface StickerBorderProps {
 export function StickerBorder({ layer, onImageUpdate }: StickerBorderProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [borderColor, setBorderColor] = useState('#FFFFFF');
-  const [borderWidth, setBorderWidth] = useState(8);
+  const [borderWidth, setBorderWidth] = useState<number | string>(8);
   const { toast } = useToast();
 
   const handleAddBorder = async () => {
@@ -37,7 +37,7 @@ export function StickerBorder({ layer, onImageUpdate }: StickerBorderProps) {
     const result = await addBorder({ 
         photoDataUri: layer.imageUrl,
         borderColor,
-        borderWidth,
+        borderWidth: Number(borderWidth),
     });
     
     setIsProcessing(false);
@@ -56,6 +56,18 @@ export function StickerBorder({ layer, onImageUpdate }: StickerBorderProps) {
       });
     }
   };
+  
+  const handleBorderWidthChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === '') {
+        setBorderWidth('');
+    } else {
+        const numValue = parseInt(value, 10);
+        if (!isNaN(numValue)) {
+            setBorderWidth(numValue);
+        }
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -79,7 +91,7 @@ export function StickerBorder({ layer, onImageUpdate }: StickerBorderProps) {
               id="border-width"
               type="number"
               value={borderWidth}
-              onChange={(e) => setBorderWidth(parseInt(e.target.value, 10))}
+              onChange={handleBorderWidthChange}
               min="1"
               max="20"
               className="h-10 w-full bg-zinc-800 border-zinc-700"
