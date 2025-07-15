@@ -49,7 +49,7 @@ const removeBackgroundFlow = ai.defineFlow(
         {media: {url: input.photoDataUri}}
       ],
       config: { 
-        responseModalities: ['IMAGE'],
+        responseModalities: ['IMAGE', 'TEXT'],
         safetySettings: [
           {
             category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
