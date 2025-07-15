@@ -15,11 +15,13 @@ interface DesignCanvasProps {
 const LayerComponent = ({
     layer,
     onUpdateLayer,
-    onCommit
+    onCommit,
+    isInitialLayer
 }: {
     layer: Layer,
     onUpdateLayer: (id: string, updates: Partial<Layer>) => void;
     onCommit: (description: string) => void;
+    isInitialLayer: boolean;
 }) => {
     const [isPanning, setIsPanning] = useState(false);
     const panStartRef = useRef({ x: 0, y: 0, layerX: 0, layerY: 0 });
@@ -125,6 +127,7 @@ const LayerComponent = ({
               data-ai-hint="sticker design"
               unoptimized
               draggable={false}
+              priority={isInitialLayer}
             />
           ) : layer.type === 'text' ? (
               <div style={textStyle}>
@@ -148,12 +151,13 @@ export function DesignCanvas({
             id="design-canvas"
             className="relative w-[500px] h-[500px] flex items-center justify-center"
         >
-            {layers.map(layer => (
+            {layers.map((layer, index) => (
                 <LayerComponent 
                     key={layer.id}
                     layer={layer}
                     onUpdateLayer={onUpdateLayer}
                     onCommit={onCommit}
+                    isInitialLayer={index === 0}
                 />
             ))}
         </div>
