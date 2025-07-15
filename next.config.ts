@@ -27,20 +27,33 @@ const nextConfig: NextConfig = {
       fs: false,
       path: false,
       crypto: false,
+      'node:fs': false,
+      'node:fs/promises': false,
+      'node:os': false,
+      'node:path': false,
+      'node:crypto': false,
+      os: false,
     };
 
     // Configure for ONNX Runtime Web
     if (!isServer) {
-      // Ensure ONNX Runtime Web can be resolved
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'onnxruntime-web': require.resolve('onnxruntime-web'),
+      // Externalize problematic node modules when building for browser
+      config.externals = {
+        ...config.externals,
+        'onnxruntime-node': 'onnxruntime-node',
       };
       
       // Handle WASM files properly
       config.module.rules.push({
         test: /\.wasm$/,
         type: 'asset/resource',
+      });
+      
+      // Handle .mjs files
+      config.module.rules.push({
+        test: /\.mjs$/,
+        include: /node_modules/,
+        type: 'javascript/auto',
       });
     }
 
