@@ -42,7 +42,7 @@ const addBorderFlow = ai.defineFlow(
     outputSchema: AddBorderOutputSchema,
   },
   async (input) => {
-    const {media} = await ai.generate({
+    const {media, finishReason} = await ai.generate({
       prompt: [
         {media: {url: input.photoDataUri}},
         {text: `Add a solid, sticker-style border that follows the exact contour of the subject in the provided image. The image already has a transparent background. The border should be ${input.borderWidth} pixels wide and have the color ${input.borderColor}. The final output must be a PNG image with only the subject and its new border visible on a transparent background.`},
@@ -60,7 +60,7 @@ const addBorderFlow = ai.defineFlow(
     });
 
     if (!media?.url) {
-        throw new Error("The AI model did not return an image.");
+      throw new Error(`The AI model failed to generate an image. Finish Reason: ${finishReason}`);
     }
 
     return {borderedImageDataUri: media.url};

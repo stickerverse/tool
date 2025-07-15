@@ -40,7 +40,7 @@ const removeBackgroundFlow = ai.defineFlow(
     outputSchema: RemoveBackgroundOutputSchema,
   },
   async input => {
-    const {media} = await ai.generate({
+    const {media, finishReason} = await ai.generate({
       prompt: [
         {media: {url: input.photoDataUri}},
         {text: 'Remove the background from this image. The output should be a PNG with a transparent background.'},
@@ -58,7 +58,7 @@ const removeBackgroundFlow = ai.defineFlow(
     });
     
     if (!media?.url) {
-        throw new Error("The AI model did not return an image.");
+      throw new Error(`The AI model failed to generate an image. Finish Reason: ${finishReason}`);
     }
 
     return {removedBackgroundDataUri: media.url};
