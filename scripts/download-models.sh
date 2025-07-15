@@ -1,26 +1,22 @@
 #!/bin/bash
 
-# Create models directory
+# Create models directory if it doesn't exist
 mkdir -p public/models
 
-echo "Downloading background removal models..."
+echo "🤖 Downloading AI models for background removal..."
 
-# Download U2NetP (lightweight) - 1.2MB
-echo "Downloading U2NetP (lightweight)..."
-curl -L https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/u2netp.onnx \
-  -o public/models/u2netp.onnx
+# Download U2Net model (recommended)
+echo "📥 Downloading U2Net model..."
+curl -L "https://github.com/imgly/background-removal-js/raw/main/packages/models/small/model.onnx" \
+  -o "public/models/u2net.onnx" \
+  --progress-bar
 
-# Download U2Net (best quality) - optional
-echo "Do you want to download the full U2Net model (44MB)? (y/n)"
-read -r response
-if [[ "$response" =~ ^([yY][eE][sS]|[yY])$ ]]; then
-  echo "Downloading U2Net..."
-  curl -L https://huggingface.co/briaai/RMBG-1.4/resolve/main/onnx/u2net.onnx \
-    -o public/models/u2net.onnx
-fi
+# Download quantized version for faster processing
+echo "📥 Downloading quantized U2Net model..."
+curl -L "https://github.com/imgly/background-removal-js/raw/main/packages/models/small/model_quant.onnx" \
+  -o "public/models/u2net_quant.onnx" \
+  --progress-bar
 
-echo "Models downloaded successfully!"
-
-# Verify downloads
-echo -e "\nVerifying downloads:"
+echo "✅ Models downloaded successfully!"
+echo "📁 Models location: public/models/"
 ls -lh public/models/
