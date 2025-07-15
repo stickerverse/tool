@@ -1,29 +1,31 @@
-export interface BackgroundRemovalOptions {
-  quality: 'low' | 'medium' | 'high';
-  model?: 'u2net' | 'mobilenet' | 'api';
-  outputFormat?: 'png' | 'webp';
-  maxDimension?: number;
-  edgeFeathering?: number;
-  confidenceThreshold?: number;
+export interface ProcessingOptions {
+  model?: 'u2net' | 'u2net_quant' | 'isnet';
+  quality?: 'low' | 'medium' | 'high';
+  format?: 'png' | 'webp';
+  onProgress?: (progress: ProcessingProgress) => void;
 }
 
 export interface ProcessingProgress {
-  stage: 'loading' | 'preprocessing' | 'processing' | 'postprocessing' | 'complete';
+  stage: string;
   progress: number;
+}
+
+export interface ProcessingResult {
+  blob: Blob;
+  originalSize: number;
+  processedSize: number;
+  processingTime: number;
+}
+
+export interface ProcessingError {
+  code: string;
   message: string;
 }
 
-export interface BackgroundRemovalResult {
-  blob: Blob;
-  width: number;
-  height: number;
-  processingTime: number;
-  method: string;
+export interface ModelConfig {
+  name: string;
+  url?: string;
+  inputSize: number;
+  mean: number[];
+  std: number[];
 }
-
-export type BackgroundRemovalError = 
-  | { type: 'INVALID_IMAGE'; message: string }
-  | { type: 'MODEL_LOAD_FAILED'; message: string }
-  | { type: 'PROCESSING_FAILED'; message: string }
-  | { type: 'API_ERROR'; message: string; statusCode?: number }
-  | { type: 'SIZE_LIMIT_EXCEEDED'; message: string };

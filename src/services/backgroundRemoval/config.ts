@@ -1,36 +1,36 @@
-export const BG_REMOVAL_CONFIG = {
-  // Model URLs (host these on your CDN)
-  models: {
-    u2net: '/models/u2net_quant.onnx',
-    mobilenet: '/models/mobilenet_quant.onnx',
+export interface ModelConfig {
+  name: string;
+  url?: string;
+  inputSize: number;
+  mean: number[];
+  std: number[];
+}
+
+export const MODEL_CONFIGS: Record<string, ModelConfig> = {
+  u2net: {
+    name: 'u2net',
+    inputSize: 1024,
+    mean: [0.485, 0.456, 0.406],
+    std: [0.229, 0.224, 0.225],
   },
-  
-  // Processing limits
-  maxImageSize: 4096,
-  maxFileSize: 10 * 1024 * 1024, // 10MB
-  
-  // Quality presets
-  qualityPresets: {
-    low: {
-      maxDimension: 512,
-      modelType: 'mobilenet',
-      confidenceThreshold: 0.5,
-    },
-    medium: {
-      maxDimension: 1024,
-      modelType: 'u2net',
-      confidenceThreshold: 0.6,
-    },
-    high: {
-      maxDimension: 2048,
-      modelType: 'u2net',
-      confidenceThreshold: 0.7,
-    },
+  u2net_small: {
+    name: 'u2net_small',
+    inputSize: 320,
+    mean: [0.485, 0.456, 0.406],
+    std: [0.229, 0.224, 0.225],
   },
-  
-  // API configuration (if using Remove.bg)
-  api: {
-    endpoint: process.env.NEXT_PUBLIC_REMOVEBG_ENDPOINT || 'https://api.remove.bg/v1.0/removebg',
-    // API key should be stored securely, preferably server-side
+  briaai_rmbg: {
+    name: 'briaai_rmbg',
+    inputSize: 1024,
+    mean: [0.5, 0.5, 0.5],
+    std: [1.0, 1.0, 1.0],
   },
-} as const;
+  isnet: {
+    name: 'isnet',
+    inputSize: 1024,
+    mean: [0.5, 0.5, 0.5],
+    std: [0.5, 0.5, 0.5],
+  }
+};
+
+export const DEFAULT_MODEL = 'u2net';
