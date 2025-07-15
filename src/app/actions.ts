@@ -85,9 +85,9 @@ export async function addBorder(
 ): Promise<{ borderedImageDataUri: string } | { error: string }> {
   try {
     const AddBorderInputSchema = z.object({
-        photoDataUri: z.string(),
-        borderColor: z.string(),
-        borderWidth: z.number(),
+        photoDataUri: z.string().min(1, "Image data URI cannot be empty."),
+        borderColor: z.string().regex(/^#[0-9a-fA-F]{6}$/, "Invalid hex color format."),
+        borderWidth: z.number().min(1).max(20),
     });
 
     const validatedInput = AddBorderInputSchema.parse(input);

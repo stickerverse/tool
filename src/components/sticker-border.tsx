@@ -54,7 +54,7 @@ export function StickerBorder({ layer, onImageUpdate }: StickerBorderProps) {
     const borderResult = await addBorder({ 
         photoDataUri: bgRemovalResult.removedBackgroundDataUri,
         borderColor,
-        borderWidth: Number(borderWidth),
+        borderWidth: borderWidth,
     });
     
     setIsProcessing(false);
