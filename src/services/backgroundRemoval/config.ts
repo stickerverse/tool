@@ -34,3 +34,13 @@ export const MODEL_CONFIGS: Record<string, ModelConfig> = {
 };
 
 export const DEFAULT_MODEL = 'u2net';
+
+// Background removal configuration
+export const BG_REMOVAL_CONFIG = {
+  models: {
+    u2net: '/models/u2net.onnx',
+    mobilenet: '/models/mobilenet.onnx'
+  },
+  maxFileSize: 10 * 1024 * 1024, // 10MB
+  supportedFormats: ['image/jpeg', 'image/png', 'image/webp']
+};
