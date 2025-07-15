@@ -7,10 +7,15 @@ import {
   ProcessingError
 } from './types';
 
-// Configure ONNX Runtime for web
-ort.env.wasm.wasmPaths = '/';
-ort.env.wasm.numThreads = 1;
-ort.env.wasm.simd = true;
+// Configure ONNX Runtime for web with proper path handling
+if (typeof window !== 'undefined') {
+  // Only configure in browser environment
+  ort.env.wasm.wasmPaths = `${window.location.origin}/`;
+  ort.env.wasm.numThreads = 1;
+  ort.env.wasm.simd = true;
+  // Disable dynamic imports to avoid module loading issues
+  ort.env.wasm.proxy = false;
+}
 
 export class BackgroundRemovalService {
   private session: ort.InferenceSession | null = null;
@@ -22,19 +27,28 @@ export class BackgroundRemovalService {
     std: [0.229, 0.224, 0.225],
   };
 
- // Update the initialize method to handle GitHub Codespaces environment
 async initialize(modelPath?: string): Promise<void> {
   if (this.isInitialized && this.session) return;
 
   console.log('Initializing ONNX Runtime...');
   
   try {
-    // Configure ONNX Runtime to use the correct paths
-    const ortBaseUrl = window.location.origin + '/';
-    console.log('Setting ORT base URL to:', ortBaseUrl);
-    
-    // Set ONNX Runtime base URL for loading WASM files
-    ort.env.wasm.wasmPaths = ortBaseUrl;
+    // Additional ONNX Runtime configuration for better compatibility
+    if (typeof window !== 'undefined') {
+      // Configure for production and development environments
+      const baseUrl = window.location.origin + '/';
+      console.log('Setting ORT base URL to:', baseUrl);
+      
+      // Ensure WASM paths are correctly set
+      ort.env.wasm.wasmPaths = baseUrl;
+      ort.env.wasm.numThreads = Math.min(navigator.hardwareConcurrency || 1, 4);
+      ort.env.wasm.simd = true;
+      ort.env.wasm.proxy = false; // Disable proxy to avoid dynamic import issues
+      
+      // Set debug level to get more information about failures
+      ort.env.debug = false;
+      ort.env.logLevel = 'warning';
+    }
     
     // Try multiple model paths with fallback
     const modelPaths = modelPath ? [modelPath] : [
@@ -48,14 +62,20 @@ async initialize(modelPath?: string): Promise<void> {
       try {
         console.log(`Attempting to load model from: ${modelUrl}`);
 
-        // Create session with WASM only since WebGL might be problematic in Codespaces
+        // Create session with conservative settings for better compatibility
         this.session = await ort.InferenceSession.create(modelUrl, {
-          executionProviders: ['wasm'],
-          graphOptimizationLevel: 'all',
-          enableCpuMemArena: true,
-          enableMemPattern: true,
+          executionProviders: ['wasm'], // Only use WASM for maximum compatibility
+          graphOptimizationLevel: 'basic', // Use basic optimization to avoid issues
+          enableCpuMemArena: false, // Disable to avoid memory issues
+          enableMemPattern: false, // Disable to avoid pattern matching issues
           executionMode: 'sequential',
-          logSeverityLevel: 1, // Increase log level for debugging
+          logSeverityLevel: 2, // Set to 'warning' level
+          extra: {
+            session: {
+              'use_device_allocator_for_initializers': '0',
+              'enable_profiling': '0'
+            }
+          }
         });
 
         console.log('✅ Model loaded successfully from:', modelUrl);

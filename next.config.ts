@@ -47,14 +47,27 @@ const nextConfig: NextConfig = {
       config.module.rules.push({
         test: /\.wasm$/,
         type: 'asset/resource',
+        generator: {
+          filename: 'static/wasm/[name].[hash][ext]',
+        },
       });
       
-      // Handle .mjs files
+      // Handle .mjs files - important for ONNX Runtime modules
       config.module.rules.push({
         test: /\.mjs$/,
         include: /node_modules/,
         type: 'javascript/auto',
+        resolve: {
+          fullySpecified: false,
+        },
       });
+
+      // Configure module resolution for ONNX Runtime
+      // Remove problematic alias since it's causing build errors
+      // config.resolve.alias = {
+      //   ...config.resolve.alias,
+      //   'onnxruntime-web': 'onnxruntime-web/dist/ort.wasm.min.js',
+      // };
     }
 
     return config;

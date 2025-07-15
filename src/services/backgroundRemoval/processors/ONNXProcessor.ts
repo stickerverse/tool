@@ -25,13 +25,29 @@ export class ONNXProcessor {
       this.modelType = modelType;
       const modelPath = BG_REMOVAL_CONFIG.models[modelType];
       
-      // Configure ONNX Runtime for WebGL backend
-      ort.env.wasm.numThreads = navigator.hardwareConcurrency || 4;
-      ort.env.wasm.simd = true;
+      // Configure ONNX Runtime for better compatibility
+      if (typeof window !== 'undefined') {
+        ort.env.wasm.wasmPaths = `${window.location.origin}/`;
+        ort.env.wasm.numThreads = Math.min(navigator.hardwareConcurrency || 1, 4);
+        ort.env.wasm.simd = true;
+        ort.env.wasm.proxy = false; // Disable proxy to avoid dynamic import issues
+        ort.env.debug = false;
+        ort.env.logLevel = 'warning';
+      }
       
       this.session = await ort.InferenceSession.create(modelPath, {
-        executionProviders: ['webgl', 'wasm'],
-        graphOptimizationLevel: 'all',
+        executionProviders: ['wasm'], // Use only WASM for maximum compatibility
+        graphOptimizationLevel: 'basic',
+        enableCpuMemArena: false,
+        enableMemPattern: false,
+        executionMode: 'sequential',
+        logSeverityLevel: 2,
+        extra: {
+          session: {
+            'use_device_allocator_for_initializers': '0',
+            'enable_profiling': '0'
+          }
+        }
       });
       
       onProgress?.({
