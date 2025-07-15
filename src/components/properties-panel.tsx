@@ -3,7 +3,6 @@
 import type { Layer, EditorView } from './sticker-studio';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
-import { BackgroundRemoverEnhanced } from './background-remover-enhanced';
 import { ScreenshotButton } from './screenshot-button';
 import { ImageUploader } from './image-uploader';
 import { ImageCropper } from './image-cropper';
@@ -139,13 +138,9 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate, onU
           
           {isImageLayer && (
             <>
-              <div className="grid grid-cols-2 gap-4">
+              <ControlSection title="Image">
                 <ImageUploader onImageUpdate={(url) => handleDirectImageUpdate(url, 'Update Image')} />
-                <BackgroundRemoverEnhanced 
-                  imageUrl={layer.imageUrl}
-                  onComplete={(processedUrl) => handleDirectImageUpdate(processedUrl, 'Remove Background (AI)')}
-                />
-              </div>
+              </ControlSection>
               <Separator className="bg-border/50" />
             </>
           )}
@@ -188,7 +183,7 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate, onU
               
               <Separator className="bg-border/50" />
               
-              <ImageCropper onImageUpdate={onImageCrop} stickerImage={layer.imageUrl}/>
+              <ImageCropper onImageUpdate={onImageCrop} stickerImage={layer.imageUrl || null}/>
               
               <Separator className="bg-border/50" />
               

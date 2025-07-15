@@ -4,6 +4,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { DesignCanvas } from './design-canvas';
 import { PropertiesPanel } from './properties-panel';
+import { CanvasToolbar } from './canvas-toolbar';
 import { Separator } from './ui/separator';
 import { AddNewPanel } from './add-new-panel';
 import { AddTextPanel } from './add-text-panel';
@@ -253,6 +254,10 @@ export default function StickerStudio() {
             layers={layers}
             onUpdateLayer={handleLiveUpdateLayer} 
             onCommit={handleCommitUpdate}
+        />
+        <CanvasToolbar 
+          selectedLayer={layers.find(l => l.id === selectedLayerId) ?? null}
+          onLayerUpdate={handleLayerChange}
         />
       </div>
       <Separator orientation="vertical" className="hidden md:block bg-border/50" />
