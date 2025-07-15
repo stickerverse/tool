@@ -43,3 +43,6 @@ next-env.d.ts
 # firebase
 firebase-debug.log
 firestore-debug.log
+# Background removal models (too large for git)
+public/models/*.onnx
+public/models/*.ort
