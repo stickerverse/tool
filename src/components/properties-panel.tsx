@@ -1,10 +1,9 @@
-
 'use client';
 
 import type { Layer, EditorView } from './sticker-studio';
 import { Button } from './ui/button';
 import { Separator } from './ui/separator';
-import { BackgroundRemover } from './background-remover';
+import { BackgroundRemoverEnhanced } from './background-remover-enhanced';
 import { ScreenshotButton } from './screenshot-button';
 import { ImageUploader } from './image-uploader';
 import { ImageCropper } from './image-cropper';
@@ -142,9 +141,9 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate, onU
             <>
               <div className="grid grid-cols-2 gap-4">
                 <ImageUploader onImageUpdate={(url) => handleDirectImageUpdate(url, 'Update Image')} />
-                <BackgroundRemover 
-                  onImageUpdate={(newUrl) => onLayerChange(layer.id, { imageUrl: newUrl }, 'Remove Background')} 
-                  stickerImage={layer.imageUrl} 
+                <BackgroundRemoverEnhanced 
+                  imageUrl={layer.imageUrl}
+                  onComplete={(processedUrl) => handleDirectImageUpdate(processedUrl, 'Remove Background (AI)')}
                 />
               </div>
               <Separator className="bg-border/50" />
