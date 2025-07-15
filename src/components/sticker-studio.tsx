@@ -178,6 +178,8 @@ export default function StickerStudio() {
 
   const renderPanel = () => {
     const selectedLayer = layers.find(l => l.id === selectedLayerId) ?? null;
+    const canUndo = historyIndex > 0;
+    const canRedo = historyIndex < history.length - 1;
 
     switch (view) {
         case 'edit':
@@ -187,6 +189,10 @@ export default function StickerStudio() {
                     onLayerChange={handleLayerChange}
                     onReset={handleReset}
                     onNavigate={navigateTo}
+                    onUndo={undo}
+                    onRedo={redo}
+                    canUndo={canUndo}
+                    canRedo={canRedo}
                 />
             );
         case 'add':

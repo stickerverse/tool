@@ -24,6 +24,8 @@ import {
   AlignHorizontalJustifyCenter,
   Layers2,
   Layers3,
+  Undo,
+  Redo,
 } from 'lucide-react';
 import { ScrollArea } from './ui/scroll-area';
 
@@ -35,6 +37,10 @@ interface PropertiesPanelProps {
   onLayerChange: (id: string, updates: Partial<Layer>, description: string) => void;
   onReset: () => void;
   onNavigate: (view: EditorView) => void;
+  onUndo: () => void;
+  onRedo: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
 }
 
 function ControlSection({ title, children }: { title: string; children: React.ReactNode }) {
@@ -55,14 +61,22 @@ function ButtonGroupButton({ children, onClick, active, disabled }: { children: 
 }
 
 
-export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate }: PropertiesPanelProps) {
+export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate, onUndo, onRedo, canUndo, canRedo }: PropertiesPanelProps) {
   if (!layer) {
     return (
         <div className="h-full flex flex-col bg-card text-foreground">
              <header className="flex items-center justify-between p-4 border-b border-border/50">
-                <Button variant="ghost" size="icon" onClick={() => onNavigate('add')}>
-                <ChevronLeft className="w-5 h-5" />
-                </Button>
+                <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => onNavigate('add')}>
+                        <ChevronLeft className="w-5 h-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={onUndo} disabled={!canUndo}>
+                        <Undo className="w-5 h-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={onRedo} disabled={!canRedo}>
+                        <Redo className="w-5 h-5" />
+                    </Button>
+                </div>
                 <h1 className="text-lg font-semibold tracking-wide">EDIT FILE</h1>
                 <Button variant="ghost" size="icon" onClick={onReset}>
                 <Trash2 className="w-5 h-5" />
@@ -104,9 +118,17 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate }: P
   return (
     <div className="h-full flex flex-col bg-card text-foreground">
       <header className="flex items-center justify-between p-4 border-b border-border/50">
-        <Button variant="ghost" size="icon" onClick={() => onNavigate('add')}>
-          <ChevronLeft className="w-5 h-5" />
-        </Button>
+        <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" onClick={() => onNavigate('add')}>
+                <ChevronLeft className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onUndo} disabled={!canUndo}>
+                <Undo className="w-5 h-5" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onRedo} disabled={!canRedo}>
+                <Redo className="w-5 h-5" />
+            </Button>
+        </div>
         <h1 className="text-lg font-semibold tracking-wide">EDIT FILE</h1>
         <Button variant="ghost" size="icon" onClick={onReset}>
           <Trash2 className="w-5 h-5" />
