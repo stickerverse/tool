@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview An AI agent that crops an image based on a shape.
@@ -43,7 +44,7 @@ const cropImageFlow = ai.defineFlow(
     const {media} = await ai.generate({
       prompt: [
         {media: {url: input.photoDataUri}},
-        {text: `Crop this image into a ${input.shape} shape. The object in the image should be centered within the shape.`},
+        {text: `**Do not generate a new image.** You must only edit the provided image. Crop this image into a ${input.shape} shape. The object in the image should be centered within the shape.`},
       ],
       model: 'googleai/gemini-2.0-flash-preview-image-generation',
       config: {
