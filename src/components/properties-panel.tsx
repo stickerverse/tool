@@ -105,7 +105,7 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate, onU
     }, `Resize to ${Math.round(newWidth)}x${Math.round(newHeight)}`);
   };
 
-  const handleImageUpdate = (newImageUrl: string, description: string) => {
+  const handleDirectImageUpdate = (newImageUrl: string, description: string) => {
     onLayerChange(layer.id, { imageUrl: newImageUrl }, description);
   };
 
@@ -141,7 +141,7 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate, onU
           {isImageLayer && (
             <>
               <div className="grid grid-cols-2 gap-4">
-                <ImageUploader onImageUpdate={(url) => handleImageUpdate(url, 'Update Image')} />
+                <ImageUploader onImageUpdate={(url) => handleDirectImageUpdate(url, 'Update Image')} />
                 <BackgroundRemover 
                   onImageUpdate={(newUrl) => onLayerChange(layer.id, { imageUrl: newUrl }, 'Remove Background')} 
                   stickerImage={layer.imageUrl} 
@@ -195,7 +195,7 @@ export function PropertiesPanel({ layer, onLayerChange, onReset, onNavigate, onU
               
               <StickerBorder 
                 layer={layer} 
-                onImageUpdate={(url) => handleImageUpdate(url, 'Update Border')} 
+                onImageUpdate={(url) => handleDirectImageUpdate(url, 'Update Border')} 
               />
 
               <Separator className="bg-border/50" />
