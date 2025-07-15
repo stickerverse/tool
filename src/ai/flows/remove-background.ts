@@ -41,6 +41,14 @@ const removeBackgroundFlow = ai.defineFlow(
     outputSchema: RemoveBackgroundOutputSchema,
   },
   async (input) => {
+    // Step 0: Extract the Base64 data and MIME type from the data URI.
+    const parts = input.photoDataUri.match(/^data:(image\/\w+);base64,(.*)$/);
+    if (!parts) {
+      throw new Error('Invalid photoDataUri format.');
+    }
+    const mimeType = parts[1]; // e.g., "image/png"
+    const originalImageBase64 = parts[2];
+
     // Step 1: Use the AI to generate a PRECISE black and white mask.
     const {media, finishReason} = await ai.generate({
       prompt: `Technical Task: Generate a binary segmentation mask. The output MUST be a non-creative, technical mask image with only two colors.
@@ -48,21 +56,23 @@ const removeBackgroundFlow = ai.defineFlow(
 - All other pixels MUST be solid black (RGB 0, 0, 0).
 - DO NOT add any other colors or effects.`,
       model: 'googleai/gemini-1.5-flash-latest',
-      input: [
-        {media: {url: input.photoDataUri}},
-      ],
-      config: {
-        responseModalities: ['IMAGE', 'TEXT'],
+      
+      // FIX 1: Provide the media correctly as raw data.
+      media: [{data: originalImageBase64, mimeType: mimeType}],
+      
+      // FIX 2: Use the modern 'output' key to request an image.
+      output: {
+        format: 'media',
+        mimeType: 'image/png' // We want the mask as a PNG
       },
     });
 
-    if (!media?.url) {
+    if (!media?.data) {
       throw new Error(`AI failed to generate a valid segmentation mask. Finish Reason: ${finishReason}`);
     }
-    const maskBase64 = media.url.split(',')[1];
+    const maskBase64 = media.data;
     
     // Step 2: Use Sharp to apply the mask.
-    const originalImageBase64 = input.photoDataUri.split(',')[1];
     const originalImageBuffer = Buffer.from(originalImageBase64, 'base64');
     const maskImageBuffer = Buffer.from(maskBase64, 'base64');
 
