@@ -5,7 +5,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { addBorder, removeImageBackground } from '@/app/actions';
+import { addBorder } from '@/app/actions';
 import { Loader2, Palette } from 'lucide-react';
 import type { Layer } from './sticker-studio';
 import { Slider } from './ui/slider';
@@ -33,26 +33,10 @@ export function StickerBorder({ layer, onImageUpdate }: StickerBorderProps) {
     }
 
     setIsProcessing(true);
-    toast({ title: "AI is at work...", description: "Step 1/2: Preparing image..." });
+    toast({ title: "Adding border...", description: "Your sticker border is being applied." });
 
-    // Step 1: Ensure background is removed to get a clean subject.
-    const bgRemovalResult = await removeImageBackground({ photoDataUri: layer.imageUrl });
-
-    if ('error' in bgRemovalResult) {
-      toast({
-        variant: "destructive",
-        title: "Failed to Prepare Image",
-        description: bgRemovalResult.error,
-      });
-      setIsProcessing(false);
-      return;
-    }
-
-    toast({ title: "AI is at work...", description: "Step 2/2: Adding sticker border..." });
-
-    // Step 2: Add border to the image with the removed background.
     const borderResult = await addBorder({ 
-        photoDataUri: bgRemovalResult.removedBackgroundDataUri,
+        photoDataUri: layer.imageUrl,
         borderColor,
         borderWidth: borderWidth,
     });
