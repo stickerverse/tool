@@ -43,10 +43,20 @@ const removeBackgroundFlow = ai.defineFlow(
   async input => {
     // STEP 1: Generate the segmentation mask using Gemini Vision
     const {media: maskMedia, finishReason: maskFinishReason} = await ai.generate({
-      model: 'googleai/gemini-pro-vision',
-      prompt: `Analyze the following image and identify the main subject(s). Generate a precise, black and white segmentation mask. The subject(s) should be solid white. The background should be solid black. Do not add any other text, explanation, or formatting. The output must be the image mask only.`,
-      promptData: [{media: {url: input.photoDataUri}}],
-      config: { responseModalities: ['IMAGE'] },
+      model: 'googleai/gemini-1.5-flash-latest',
+      prompt: [
+        {text: `**Do not generate a new image.** You must only edit the provided image. Analyze the following image and identify the main subject(s). Generate a precise, black and white segmentation mask. The subject(s) should be solid white. The background should be solid black. Do not add any other text, explanation, or formatting. The output must be the image mask only.`},
+        {media: {url: input.photoDataUri}}
+      ],
+      config: { 
+        responseModalities: ['IMAGE'],
+        safetySettings: [
+          {
+            category: 'HARM_CATEGORY_DANGEROUS_CONTENT',
+            threshold: 'BLOCK_ONLY_HIGH',
+          },
+        ],
+      },
     });
 
     const maskBase64 = maskMedia?.url?.split(';base64,').pop();
