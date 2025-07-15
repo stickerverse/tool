@@ -10,6 +10,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
+import sharp from 'sharp';
 
 const RemoveBackgroundInputSchema = z.object({
   photoDataUri: z
@@ -40,23 +41,46 @@ const removeBackgroundFlow = ai.defineFlow(
     outputSchema: RemoveBackgroundOutputSchema,
   },
   async input => {
-    const {media, finishReason} = await ai.generate({
-      prompt: [
-        {media: {url: input.photoDataUri}},
-      ],
-      model: 'googleai/gemini-2.0-flash-preview-image-segmentation',
-      config: {
-        responseModalities: ['IMAGE'],
-        segmentationConfig: {
-            mode: "SUBJECT_PLUS_BACKGROUND"
-        }
-      },
+    // STEP 1: Generate the segmentation mask using Gemini Vision
+    const {media: maskMedia, finishReason: maskFinishReason} = await ai.generate({
+      model: 'googleai/gemini-pro-vision',
+      prompt: `Analyze the following image and identify the main subject(s). Generate a precise, black and white segmentation mask. The subject(s) should be solid white. The background should be solid black. Do not add any other text, explanation, or formatting. The output must be the image mask only.`,
+      promptData: [{media: {url: input.photoDataUri}}],
+      config: { responseModalities: ['IMAGE'] },
     });
-    
-    if (!media?.url) {
-      throw new Error(`The AI model failed to generate an image. Finish Reason: ${finishReason}`);
+
+    const maskBase64 = maskMedia?.url?.split(';base64,').pop();
+
+    if (!maskBase64) {
+      throw new Error(`Failed to generate a valid segmentation mask from the AI model. Finish Reason: ${maskFinishReason}`);
     }
 
-    return {removedBackgroundDataUri: media.url};
+    // STEP 2: Apply the mask to the original image using Sharp
+    const originalImageBase64 = input.photoDataUri.split(';base64,').pop();
+    if (!originalImageBase64) {
+      throw new Error('Invalid input image data URI.');
+    }
+    
+    try {
+      const originalImageBuffer = Buffer.from(originalImageBase64, 'base64');
+      const maskImageBuffer = Buffer.from(maskBase64, 'base64');
+
+      const finalImageBuffer = await sharp(originalImageBuffer)
+        .composite([
+          {
+            input: maskImageBuffer,
+            blend: 'dest-in',
+          },
+        ])
+        .toFormat('png')
+        .toBuffer();
+
+      const finalImageDataUri = `data:image/png;base64,${finalImageBuffer.toString('base64')}`;
+
+      return { removedBackgroundDataUri: finalImageDataUri };
+    } catch (error) {
+      console.error('Error during image processing with Sharp:', error);
+      throw new Error('Failed to apply the mask to the original image.');
+    }
   }
 );

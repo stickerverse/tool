@@ -12,7 +12,12 @@ export async function removeImageBackground(
   input: RemoveBackgroundInput
 ): Promise<{ removedBackgroundDataUri: string } | { error: string }> {
   try {
-    const result = await removeBackground(input);
+    const RemoveBackgroundInputSchema = z.object({
+        photoDataUri: z.string().min(1, "Image data URI cannot be empty."),
+    });
+    
+    const validatedInput = RemoveBackgroundInputSchema.parse(input);
+    const result = await removeBackground(validatedInput);
     return result;
   } catch (e) {
     console.error(e);
